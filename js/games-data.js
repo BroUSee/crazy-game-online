@@ -278,6 +278,18 @@ const GAMES = [
     difficulty: "Medium",
     featured: false
   },
+  {
+    id: "battle-arena",
+    title: "Battle Arena",
+    description: "Top-down shooter! Survive endless waves of enemies, collect power-ups and dominate the arena!",
+    emoji: "⚔️",
+    color: "#6c63ff",
+    file: "games/battle-arena.html",
+    tags: ["single", "action"],
+    players: "1 Player",
+    difficulty: "Hard",
+    featured: true
+  },
 ];
 
 // ── TAG DISPLAY CONFIG ──────────────────────
