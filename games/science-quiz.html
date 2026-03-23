@@ -3,35 +3,59 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Battleship — Crazy Game Online</title>
-  <meta name="description" content="Play Battleship online! Place your fleet and sink the enemy ships. Classic naval strategy game."/>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚢</text></svg>"/>
+  <title>Science Quiz — Crazy Game Online</title>
+  <meta name="description" content="Play Science Quiz! Test your knowledge of space, biology, chemistry and physics."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
   <link rel="stylesheet" href="../css/game.css"/>
   <style>
-    .bs-grid { display:grid;grid-template-columns:repeat(10,1fr);gap:3px;max-width:340px;margin:0 auto; }
-    .bs-cell { aspect-ratio:1;border-radius:4px;border:1px solid var(--card-border);background:var(--dark2);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-size:0.9rem; }
-    .bs-cell.ship   { background:#2d5016; }
-    .bs-cell.hit    { background:var(--primary);cursor:default; }
-    .bs-cell.miss   { background:#1a2a4a;cursor:default; }
-    .bs-cell.sunk   { background:#8b0000; }
-    .bs-cell:hover:not(.hit):not(.miss):not(.sunk) { border-color:var(--primary);background:rgba(255,71,87,0.1); }
-    .bs-cell.preview { background:rgba(46,213,115,0.3); }
-    .bs-cell.invalid { background:rgba(255,71,87,0.3); }
-    .ship-list { display:flex;flex-direction:column;gap:8px; }
-    .ship-item { display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;border:2px solid var(--card-border);background:var(--dark2);transition:all 0.2s; }
-    .ship-item.selected { border-color:var(--primary);background:rgba(255,71,87,0.1); }
-    .ship-item.placed   { opacity:0.5;cursor:default; }
-    .ship-dots { display:flex;gap:3px; }
-    .ship-dot  { width:14px;height:14px;background:var(--secondary);border-radius:3px; }
-    .phases { display:flex;flex-direction:column;gap:16px;width:100%;align-items:center; }
-    .phase-label { font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--accent);text-align:center; }
+    .quiz-card { max-width:560px;margin:0 auto;width:100%; }
+    .q-cat    { display:inline-block;background:rgba(46,213,115,0.2);color:var(--secondary);font-size:0.75rem;font-weight:800;padding:3px 12px;border-radius:50px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px; }
+    .q-text   { font-family:'Fredoka One',cursive;font-size:1.3rem;line-height:1.4;margin-bottom:20px;min-height:72px; }
+    .q-options { display:flex;flex-direction:column;gap:10px; }
+    .q-opt    { padding:13px 18px;border-radius:12px;border:2px solid var(--card-border);background:var(--dark2);cursor:pointer;font-weight:700;font-size:0.9rem;transition:all 0.2s;text-align:left; }
+    .q-opt:hover:not(:disabled) { border-color:var(--secondary);background:rgba(46,213,115,0.08); }
+    .q-opt.correct { border-color:var(--secondary)!important;background:rgba(46,213,115,0.15)!important;color:var(--secondary); }
+    .q-opt.wrong   { border-color:var(--primary)!important;background:rgba(255,71,87,0.15)!important;color:var(--primary); }
+    .q-opt:disabled { cursor:default;opacity:0.8; }
+    .fact-box  { background:rgba(30,144,255,0.1);border:1px solid rgba(30,144,255,0.3);border-radius:12px;padding:14px;font-size:0.85rem;color:var(--text-muted);line-height:1.6;margin-top:10px;display:none; }
+    .fact-box.show { display:block; }
+    .q-progress { background:var(--card-border);border-radius:4px;height:6px;margin-bottom:16px;overflow:hidden; }
+    .q-bar { height:100%;background:linear-gradient(90deg,var(--secondary),var(--blue));border-radius:4px;transition:width 0.4s ease; }
   </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Science Quiz",
+    "description": "Test your knowledge of space, biology, chemistry and physics. Free science quiz game online.",
+    "url": "https://brousee.github.io/crazy-game-online/games/science-quiz.html",
+    "genre": ["Trivia", "Educational"],
+    "numberOfPlayers": {
+      "@type": "QuantitativeValue",
+      "minValue": 1,
+      "maxValue": 1
+    },
+    "gamePlatform": "Web Browser",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Crazy Game Online",
+      "url": "https://brousee.github.io/crazy-game-online/"
+    }
+  }
+  </script>
 </head>
 <body>
 <nav class="game-nav">
   <div class="game-nav-inner">
     <a href="../index.html" class="back-btn">← Back</a>
-    <span class="game-nav-title">🚢 Battleship</span>
+    <span class="game-nav-title">🔬 Science Quiz</span>
     <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
   </div>
 </nav>
@@ -39,273 +63,134 @@
 <div class="game-wrapper">
   <div class="game-stage">
     <div class="game-header">
-      <h1 class="game-title">🚢 Battleship</h1>
-      <div class="game-controls-bar">
-        <button class="btn btn-secondary" id="btn-rotate">↻ Rotate</button>
-        <button class="btn btn-primary" id="btn-action">▶ Ready</button>
-      </div>
+      <h1 class="game-title">🔬 Science Quiz</h1>
+      <button class="btn btn-primary" id="btn-new">🔄 New Quiz</button>
     </div>
     <div class="score-bar">
-      <div class="score-item"><span class="score-label">Turn</span><span class="score-value" id="turn-label">Player 1</span></div>
-      <div class="score-item"><span class="score-label">Phase</span><span class="score-value" id="phase-label" style="font-size:0.9rem;">Placement</span></div>
-      <div class="score-item"><span class="score-label">Hits</span><span class="score-value" id="hits" style="color:var(--primary)">0</span></div>
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Question</span><span class="score-value" id="qnum">1/15</span></div>
+      <div class="score-item"><span class="score-label">Correct</span><span class="score-value" id="correct" style="color:var(--secondary)">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">0</span></div>
     </div>
-    <div class="game-canvas-wrap" style="flex-direction:column;gap:16px;width:100%;">
-      <div class="phases" id="phases">
-        <div class="phase-label" id="phase-msg">🚢 Player 1: Place your ships</div>
-        <div class="bs-grid" id="grid"></div>
-      </div>
+    <div class="game-canvas-wrap" style="align-items:flex-start;">
+      <div class="quiz-card" id="quiz-card"></div>
     </div>
   </div>
 
   <div class="game-info-panel">
     <div class="info-card">
-      <h3>🚢 Your Fleet</h3>
-      <div class="ship-list" id="ship-list"></div>
+      <h3>🔬 Categories</h3>
+      <ul>
+        <li>🌌 Space & Astronomy</li>
+        <li>🧬 Biology</li>
+        <li>⚗️ Chemistry</li>
+        <li>⚡ Physics</li>
+        <li>🌍 Earth Science</li>
+      </ul>
     </div>
     <div class="info-card">
-      <h3>📋 How to Play</h3>
-      <p>Place your ships, then take turns firing at your opponent's grid. First to sink all enemy ships wins!</p>
+      <h3>💡 Did you know?</h3>
+      <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6;" id="did-you-know">After each answer you'll see an interesting science fact!</p>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
     </div>
   </div>
 </div>
 
 <script>
-const SHIPS = [
-  {name:'Carrier',    size:5, emoji:'🛸'},
-  {name:'Battleship', size:4, emoji:'🚢'},
-  {name:'Cruiser',    size:3, emoji:'🚤'},
-  {name:'Submarine',  size:3, emoji:'🤿'},
-  {name:'Destroyer',  size:2, emoji:'⛵'},
+const QUESTIONS = [
+  // Space
+  {q:"What is the closest star to Earth (besides the Sun)?",a:"Proxima Centauri",opts:["Proxima Centauri","Alpha Centauri A","Sirius","Betelgeuse"],cat:"🌌 Space",fact:"Proxima Centauri is about 4.24 light-years from Earth — the nearest known star to our Solar System."},
+  {q:"How long does light from the Sun take to reach Earth?",a:"About 8 minutes",opts:["About 8 minutes","About 8 seconds","About 8 hours","About 8 days"],cat:"🌌 Space",fact:"Sunlight travels 150 million km at the speed of light (300,000 km/s), taking about 8 minutes 20 seconds to reach us."},
+  {q:"What is a black hole?",a:"A region where gravity is so strong not even light escapes",opts:["A region where gravity is so strong not even light escapes","A very dark star","An empty region of space","A collapsed moon"],cat:"🌌 Space",fact:"Black holes form when massive stars collapse. Stephen Hawking showed they slowly emit radiation, now called Hawking Radiation."},
+  {q:"What planet has the most moons?",a:"Saturn",opts:["Jupiter","Saturn","Uranus","Neptune"],cat:"🌌 Space",fact:"Saturn overtook Jupiter with over 140 confirmed moons as of 2023 — more than any other planet in our solar system!"},
+  {q:"What is the name of our galaxy?",a:"The Milky Way",opts:["The Milky Way","Andromeda","Triangulum","Canis Major"],cat:"🌌 Space",fact:"The Milky Way contains 100–400 billion stars and is about 100,000 light-years in diameter. We're about 26,000 light-years from the centre."},
+  // Biology
+  {q:"How many chromosomes do humans have?",a:"46",opts:["23","44","46","48"],cat:"🧬 Biology",fact:"Humans have 46 chromosomes arranged in 23 pairs. One pair determines biological sex — XX for females, XY for males."},
+  {q:"What organ produces insulin?",a:"The pancreas",opts:["The liver","The kidney","The pancreas","The spleen"],cat:"🧬 Biology",fact:"The pancreas produces insulin in clusters of cells called the islets of Langerhans. Without insulin, cells cannot absorb glucose."},
+  {q:"How many chambers does the human heart have?",a:"4",opts:["2","3","4","5"],cat:"🧬 Biology",fact:"The heart has four chambers: two atria (receiving) and two ventricles (pumping). It beats about 100,000 times per day!"},
+  {q:"What is the basic unit of life?",a:"The cell",opts:["The atom","The molecule","The cell","The nucleus"],cat:"🧬 Biology",fact:"All living things are made of cells. The largest known cell is an ostrich egg — technically a single cell about 15 cm wide!"},
+  {q:"What part of a plant produces food through photosynthesis?",a:"The leaf",opts:["The root","The stem","The leaf","The flower"],cat:"🧬 Biology",fact:"Leaves contain chlorophyll, which captures sunlight to convert CO₂ and water into glucose and oxygen through photosynthesis."},
+  // Chemistry
+  {q:"What is the most abundant gas in Earth's atmosphere?",a:"Nitrogen (78%)",opts:["Oxygen (21%)","Nitrogen (78%)","Carbon dioxide (0.04%)","Argon (0.9%)"],cat:"⚗️ Chemistry",fact:"Nitrogen makes up 78% of air. Oxygen is just 21%. Despite being essential to life, nitrogen in its N₂ form is very unreactive."},
+  {q:"What is the pH of pure water?",a:"7 (neutral)",opts:["0 (very acidic)","7 (neutral)","14 (very alkaline)","5 (slightly acidic)"],cat:"⚗️ Chemistry",fact:"The pH scale runs from 0 (most acidic) to 14 (most alkaline/basic). Pure water is perfectly neutral at pH 7."},
+  {q:"What element is the main component of diamond?",a:"Carbon",opts:["Silicon","Carbon","Boron","Graphite"],cat:"⚗️ Chemistry",fact:"Diamond is pure carbon — the same element as graphite (pencil lead)! The difference is the crystal structure they form."},
+  // Physics
+  {q:"What is Newton's first law of motion?",a:"An object at rest stays at rest unless acted on by a force",opts:["An object at rest stays at rest unless acted on by a force","Force = mass × acceleration","Every action has an equal and opposite reaction","Energy cannot be created or destroyed"],cat:"⚡ Physics",fact:"Newton's first law is also called the law of inertia. It was first described by Galileo Galilei before Newton formalized it."},
+  {q:"What is the unit of electrical current?",a:"Ampere (A)",opts:["Volt (V)","Watt (W)","Ampere (A)","Ohm (Ω)"],cat:"⚡ Physics",fact:"The ampere (amp) measures the flow of electric charge. 1 amp = 1 coulomb of charge per second. Named after André-Marie Ampère."},
+  {q:"At what temperature does water boil at sea level?",a:"100°C",opts:["90°C","98°C","100°C","110°C"],cat:"🌍 Earth Science",fact:"Water boils at 100°C (212°F) at sea level. At higher altitudes where air pressure is lower, water boils at lower temperatures!"},
 ];
 
-let players, phase, currentPlayer, shipIdx, horizontal;
+const LS = 'cgo_hs_sciencequiz';
+const getHS = () => parseInt(localStorage.getItem(LS)||'0');
+const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 
-function createPlayer() {
-  return {
-    grid:    Array.from({length:10},()=>Array(10).fill(null)),
-    shots:   Array.from({length:10},()=>Array(10).fill(false)),
-    placed:  [], // [{r,c,size,h}]
-    hits:    0,
-  };
-}
+let questions, qIdx, score, correct_count;
 
-function init() {
-  players = [createPlayer(), createPlayer()];
-  phase   = 'place'; // place | attack | gameover
-  currentPlayer = 0;
-  shipIdx = 0;
-  horizontal = true;
-  renderShipList();
-  renderGrid();
+function newGame(){
+  questions = shuffle([...QUESTIONS]);
+  qIdx=0; score=0; correct_count=0;
   updateUI();
-  document.getElementById('btn-action').style.display = 'none';
-  document.getElementById('btn-rotate').style.display = '';
+  showQ();
 }
 
-function renderShipList() {
-  const list = document.getElementById('ship-list');
-  list.innerHTML = SHIPS.map((s,i) => `
-    <div class="ship-item${i===shipIdx?' selected':''}${players[currentPlayer].placed[i]?' placed':''}" data-i="${i}">
-      <span>${s.emoji}</span>
-      <span style="flex:1;font-weight:700;font-size:0.88rem">${s.name}</span>
-      <div class="ship-dots">${Array(s.size).fill('<div class="ship-dot"></div>').join('')}</div>
+function showQ(){
+  const q = questions[qIdx];
+  const opts = shuffle([...q.opts]);
+  document.getElementById('qnum').textContent=`${qIdx+1}/${questions.length}`;
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="q-progress"><div class="q-bar" style="width:${(qIdx/questions.length)*100}%"></div></div>
+    <div class="q-cat">${q.cat}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="q-options">
+      ${opts.map((o,i)=>`<button class="q-opt" data-ans="${o}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
     </div>
-  `).join('');
-  list.querySelectorAll('.ship-item:not(.placed)').forEach(el => el.addEventListener('click', () => {
-    shipIdx = parseInt(el.dataset.i);
-    renderShipList();
-    renderGrid();
-  }));
+    <div class="fact-box" id="fact-box">💡 ${q.fact}</div>
+  `;
+  document.querySelectorAll('.q-opt').forEach(b=>b.addEventListener('click',()=>answer(b, q)));
 }
 
-function placeShip(r, c) {
-  if (phase !== 'place') return;
-  const ship = SHIPS[shipIdx];
-  const p = players[currentPlayer];
-  if (p.placed[shipIdx]) return;
-  if (!canPlace(p.grid, r, c, ship.size, horizontal)) return;
-
-  for (let i = 0; i < ship.size; i++) {
-    const nr = horizontal ? r : r+i;
-    const nc = horizontal ? c+i : c;
-    p.grid[nr][nc] = shipIdx;
-  }
-  p.placed[shipIdx] = { r, c, size: ship.size, h: horizontal };
-
-  // Next ship
-  const nextIdx = SHIPS.findIndex((_, i) => !p.placed[i]);
-  if (nextIdx === -1) {
-    // All ships placed
-    document.getElementById('btn-action').style.display = '';
-    document.getElementById('btn-action').textContent = currentPlayer === 0 ? '✅ Player 1 Ready → Hand off to P2' : '⚔️ Start Battle!';
-    shipIdx = 0;
-  } else {
-    shipIdx = nextIdx;
-  }
-  renderShipList();
-  renderGrid();
-}
-
-function canPlace(grid, r, c, size, h) {
-  for (let i = 0; i < size; i++) {
-    const nr = h ? r : r+i, nc = h ? c+i : c;
-    if (nr < 0||nr >= 10||nc < 0||nc >= 10) return false;
-    if (grid[nr][nc] !== null) return false;
-    // check adjacent
-    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-      const ar = nr+dr, ac = nc+dc;
-      if (ar>=0&&ar<10&&ac>=0&&ac<10&&grid[ar][ac]!==null) return false;
-    }
-  }
-  return true;
-}
-
-function fire(r, c) {
-  if (phase !== 'attack') return;
-  const attacker = players[currentPlayer];
-  const defender = players[1 - currentPlayer];
-  if (attacker.shots[r][c]) return;
-  attacker.shots[r][c] = true;
-
-  if (defender.grid[r][c] !== null) {
-    attacker.hits++;
-    document.getElementById('hits').textContent = attacker.hits;
-    // Check if ship sunk
-    const si = defender.grid[r][c];
-    const ship = defender.placed[si];
-    if (ship) {
-      const allHit = Array.from({length:ship.size},(_, i)=>{
-        const nr = ship.h?ship.r:ship.r+i, nc = ship.h?ship.c+i:ship.c;
-        return attacker.shots[nr][nc];
-      }).every(Boolean);
-      if (allHit) {
-        // Mark as sunk
-        for (let i = 0; i < ship.size; i++) {
-          const nr = ship.h?ship.r:ship.r+i, nc = ship.h?ship.c+i:ship.c;
-          // sunk visually tracked in render
-        }
-      }
-    }
-    // Check win
-    const totalShipCells = SHIPS.reduce((a,s)=>a+s.size,0);
-    if (attacker.hits >= totalShipCells) { endGame(); return; }
-  }
-
-  currentPlayer = 1 - currentPlayer;
-  document.getElementById('hits').textContent = 0;
-  showHandoff();
-}
-
-function showHandoff() {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,14,23,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:200;';
-  overlay.innerHTML = `
-    <div style="font-size:3rem">🫳</div>
-    <div style="font-family:'Fredoka One',cursive;font-size:1.8rem">Hand off to Player ${currentPlayer+1}!</div>
-    <p style="color:var(--text-muted)">Don't let them see your board!</p>
-    <button class="btn btn-primary" id="handoff-ok">✅ I'm Player ${currentPlayer+1} — Show My Turn</button>`;
-  document.body.appendChild(overlay);
-  document.getElementById('handoff-ok').addEventListener('click', () => {
-    overlay.remove();
-    updateUI();
-    renderGrid();
-    document.getElementById('hits').textContent = players[currentPlayer].hits;
+function answer(btn, q){
+  document.querySelectorAll('.q-opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.ans===q.a) b.classList.add('correct');
+    if(b===btn&&btn.dataset.ans!==q.a) b.classList.add('wrong');
   });
+  document.getElementById('fact-box').classList.add('show');
+  document.getElementById('did-you-know').textContent=q.fact;
+  if(btn.dataset.ans===q.a){ score+=100; correct_count++; }
+  else score=Math.max(0,score-25);
+  updateUI();
+  setTimeout(()=>{ qIdx++; qIdx<questions.length?showQ():showResult(); }, 1600);
 }
 
-function endGame() {
-  phase = 'gameover';
-  alert(`🎉 Player ${currentPlayer+1} wins! All enemy ships sunk!`);
+function showResult(){
+  setHS(score);
+  const pct=Math.round(correct_count/questions.length*100);
+  const stars=pct>=80?'⭐⭐⭐':pct>=50?'⭐⭐':'⭐';
+  document.getElementById('quiz-card').innerHTML=`
+    <div style="text-align:center;padding:24px;animation:fadeIn 0.4s ease">
+      <div style="font-size:3rem">🔬</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.8rem;margin:12px 0">${stars} ${pct>=80?'Science Master!':pct>=50?'Good Job!':'Keep Learning!'}</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:3rem;color:var(--accent)">${score}</div>
+      <p style="color:var(--text-muted);margin:8px 0">${correct_count}/${questions.length} correct · Best: ${getHS()}</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="newGame()">▶ Try Again</button>
+    </div>`;
+  document.getElementById('hs-p').textContent=getHS();
 }
 
-function renderGrid() {
-  const grid   = document.getElementById('grid');
-  const p      = players[currentPlayer];
-  const isAttack = phase === 'attack';
-  const attacker = isAttack ? p : null;
-  const defender = isAttack ? players[1-currentPlayer] : null;
-  let hoverR = -1, hoverC = -1;
-
-  grid.innerHTML = '';
-  for (let r = 0; r < 10; r++) {
-    for (let c = 0; c < 10; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'bs-cell';
-      cell.dataset.r = r; cell.dataset.c = c;
-
-      if (isAttack) {
-        const shot = attacker.shots[r][c];
-        const hit  = shot && defender.grid[r][c] !== null;
-        if (shot) cell.classList.add(hit ? 'hit' : 'miss');
-        cell.textContent = shot ? (hit ? '💥' : '•') : '';
-        cell.addEventListener('click', () => fire(r, c));
-      } else {
-        if (p.grid[r][c] !== null) {
-          cell.classList.add('ship');
-          cell.textContent = SHIPS[p.grid[r][c]].emoji;
-        }
-        cell.addEventListener('mouseenter', () => showPreview(r, c));
-        cell.addEventListener('mouseleave', clearPreview);
-        cell.addEventListener('click', () => placeShip(r, c));
-      }
-      grid.appendChild(cell);
-    }
-  }
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('correct').textContent=correct_count;
+  document.getElementById('best').textContent=getHS();
+  document.getElementById('hs-p').textContent=getHS();
 }
 
-function showPreview(r, c) {
-  if (phase !== 'place' || players[currentPlayer].placed[shipIdx]) return;
-  clearPreview();
-  const size = SHIPS[shipIdx].size;
-  const p = players[currentPlayer];
-  for (let i = 0; i < size; i++) {
-    const nr = horizontal ? r : r+i, nc = horizontal ? c+i : c;
-    if (nr < 0||nr >= 10||nc < 0||nc >= 10) continue;
-    const el = document.querySelector(`[data-r="${nr}"][data-c="${nc}"]`);
-    if (el) el.classList.add(canPlace(p.grid, r, c, size, horizontal) ? 'preview' : 'invalid');
-  }
-}
-
-function clearPreview() {
-  document.querySelectorAll('.preview,.invalid').forEach(el => el.classList.remove('preview','invalid'));
-}
-
-function updateUI() {
-  const name = `Player ${currentPlayer+1}`;
-  document.getElementById('turn-label').textContent  = name;
-  document.getElementById('phase-label').textContent = phase === 'attack' ? 'Battle!' : 'Placement';
-  document.getElementById('phase-msg').textContent   = phase === 'attack'
-    ? `💥 ${name}: Fire at the enemy!`
-    : `🚢 ${name}: Place your ships`;
-}
-
-document.getElementById('btn-rotate').addEventListener('click', () => { horizontal = !horizontal; });
-
-document.getElementById('btn-action').addEventListener('click', () => {
-  if (currentPlayer === 0) {
-    // Show handoff screen before P2 places
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,14,23,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:200;';
-    overlay.innerHTML = `<div style="font-size:3rem">🫳</div><div style="font-family:'Fredoka One',cursive;font-size:1.8rem">Hand off to Player 2!</div><button class="btn btn-primary" id="p2-ok">✅ I'm Player 2 — Show My Board</button>`;
-    document.body.appendChild(overlay);
-    document.getElementById('p2-ok').addEventListener('click', () => {
-      overlay.remove();
-      currentPlayer = 1; shipIdx = 0;
-      renderShipList(); renderGrid(); updateUI();
-      document.getElementById('btn-action').style.display = 'none';
-    });
-  } else {
-    // Both placed — start battle
-    phase = 'attack'; currentPlayer = 0;
-    document.getElementById('btn-action').style.display = 'none';
-    document.getElementById('btn-rotate').style.display = 'none';
-    document.getElementById('ship-list').innerHTML = '<p style="color:var(--text-muted);font-size:0.88rem">Hit 💥 or Miss •</p>';
-    showHandoff();
-  }
-});
-
-init();
+document.getElementById('btn-new').addEventListener('click',newGame);
+newGame();
 </script>
 </body>
 </html>
