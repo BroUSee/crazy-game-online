@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://BroUSee.github.io/crazy-game-online/sitemap.xml
+Sitemap: https://brousee.github.io/crazy-game-online/sitemap.xml
  
