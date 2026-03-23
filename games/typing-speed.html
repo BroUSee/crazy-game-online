@@ -8,18 +8,152 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨️</text></svg>"/>
   <link rel="stylesheet" href="../css/game.css"/>
   <style>
-    .text-display { font-size:1.2rem;line-height:2;background:var(--dark2);border-radius:12px;padding:20px;letter-spacing:0.5px;font-family:'Courier New',monospace;max-height:160px;overflow:hidden; }
-    .char-correct { color:var(--secondary); }
-    .char-wrong   { color:var(--primary);background:rgba(255,71,87,0.2);border-radius:2px; }
-    .char-current { background:var(--primary);color:white;border-radius:2px; }
-    .char-pending { color:var(--text-muted); }
-    .type-input   { width:100%;padding:14px 18px;font-size:1.1rem;font-family:'Nunito',sans-serif;background:var(--card-bg);border:2px solid var(--card-border);border-radius:12px;color:var(--text);outline:none;transition:border-color 0.2s; }
-    .type-input:focus { border-color:var(--primary); }
-    .progress-bar { height:6px;background:var(--card-border);border-radius:3px;overflow:hidden; }
-    .progress-fill { height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width 0.2s; }
+    /* ── Typing area ── */
+    .typing-area {
+      width: 100%;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* The text to type — fully visible, wraps properly */
+    .text-display {
+      width: 100%;
+      background: rgba(248,249,255,0.8);
+      border: 1.5px solid var(--border-hard);
+      border-radius: 14px;
+      padding: 18px 20px;
+      font-size: 1.15rem;
+      line-height: 2;
+      font-family: 'Courier New', 'Consolas', monospace;
+      letter-spacing: 0.3px;
+      /* KEY FIX: allow text to wrap, no overflow hidden */
+      word-wrap: break-word;
+      white-space: normal;
+      overflow-wrap: break-word;
+      min-height: 120px;
+      overflow: visible;
+      box-shadow: inset 0 2px 8px rgba(108,99,255,0.06);
+    }
+
+    /* Character highlight colors */
+    .char-correct { color: var(--green);   }
+    .char-wrong   { color: var(--red); background: rgba(239,68,68,0.12); border-radius: 2px; }
+    .char-current {
+      background: var(--primary);
+      color: white;
+      border-radius: 3px;
+      animation: blink 1s ease infinite;
+    }
+    .char-pending { color: var(--text-muted); }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.5; }
+    }
+
+    /* Input field */
+    .type-input {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 1.05rem;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      border: 2px solid var(--border-hard);
+      border-radius: 14px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(108,99,255,0.06);
+    }
+
+    .type-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(108,99,255,0.12);
+    }
+
+    .type-input::placeholder { color: var(--text-light); }
+
+    .type-input:disabled {
+      background: var(--surface2);
+      cursor: not-allowed;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%;
+      height: 6px;
+      background: var(--border-hard);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 3px;
+      transition: width 0.15s ease;
+      width: 0%;
+    }
+
+    /* Result card */
+    .result-card {
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+      border: 1.5px solid rgba(108,99,255,0.25);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .result-stats {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .result-stat {
+      background: white;
+      border-radius: 12px;
+      padding: 12px 20px;
+      min-width: 80px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .result-stat-val {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary);
+      display: block;
+      letter-spacing: -0.5px;
+    }
+
+    .result-stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Timer circle in score bar */
+    .timer-countdown {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      transition: color 0.3s;
+    }
+
+    .timer-countdown.urgent { color: var(--red); animation: pulse 0.5s ease infinite; }
   </style>
 </head>
 <body>
+
 <nav class="game-nav">
   <div class="game-nav-inner">
     <a href="../index.html" class="back-btn">← Back</a>
@@ -33,27 +167,67 @@
     <div class="game-header">
       <h1 class="game-title">⌨️ Speed Typer</h1>
       <div class="game-controls-bar">
-        <button class="btn btn-primary" id="btn-new">🔄 New Text</button>
+        <button class="btn btn-secondary" id="btn-new">🔄 New Text</button>
+        <button class="btn btn-primary" id="btn-start">▶ Start</button>
       </div>
     </div>
+
+    <!-- Score bar -->
     <div class="score-bar">
-      <div class="score-item"><span class="score-label">WPM</span><span class="score-value" id="wpm">0</span></div>
-      <div class="score-item"><span class="score-label">Accuracy</span><span class="score-value" id="acc">100%</span></div>
-      <div class="score-item"><span class="score-label">Time</span><span class="score-value" id="timer">60</span></div>
-      <div class="score-item"><span class="score-label">Best WPM</span><span class="score-value" id="best">0</span></div>
+      <div class="score-item">
+        <span class="score-label">WPM</span>
+        <span class="score-value" id="wpm">0</span>
+      </div>
+      <div class="score-item">
+        <span class="score-label">Accuracy</span>
+        <span class="score-value" id="acc">100%</span>
+      </div>
+      <div class="score-item">
+        <span class="score-label">Time</span>
+        <span class="timer-countdown" id="timer">60</span>
+      </div>
+      <div class="score-item">
+        <span class="score-label">Best WPM</span>
+        <span class="score-value" id="best">0</span>
+      </div>
     </div>
-    <div class="game-canvas-wrap" style="flex-direction:column;gap:14px;width:100%;max-width:660px;margin:0 auto;">
-      <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
-      <div class="text-display" id="text-display"></div>
-      <input type="text" class="type-input" id="type-input" placeholder="Start typing here to begin…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+
+    <!-- Main typing area -->
+    <div class="typing-area">
+      <!-- Progress bar -->
+      <div class="progress-wrap">
+        <div class="progress-fill" id="prog-fill"></div>
+      </div>
+
+      <!-- Text to type — fully visible -->
+      <div class="text-display" id="text-display">
+        <span style="color:var(--text-muted);font-family:'Inter',sans-serif;font-size:0.9rem;">
+          Click Start or begin typing to load a text...
+        </span>
+      </div>
+
+      <!-- Typing input -->
+      <input
+        type="text"
+        class="type-input"
+        id="type-input"
+        placeholder="👆 Click here and start typing..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+
+      <!-- Result area -->
       <div id="result-area"></div>
     </div>
   </div>
 
+  <!-- Info panel -->
   <div class="game-info-panel">
     <div class="info-card">
       <h3>🎮 How to Play</h3>
-      <p>Type the text shown as fast and accurately as possible. The timer starts when you begin typing!</p>
+      <p>Type the text shown exactly as it appears. The timer starts automatically when you begin typing!</p>
     </div>
     <div class="info-card">
       <h3>📊 WPM Scale</h3>
@@ -65,136 +239,242 @@
       </ul>
     </div>
     <div class="info-card">
+      <h3>⌨️ Controls</h3>
+      <ul>
+        <li><span class="key-badge">Esc</span> Clear input</li>
+        <li><span class="key-badge">Tab</span> New text</li>
+      </ul>
+    </div>
+    <div class="info-card">
       <h3>🏆 Best WPM</h3>
-      <p style="font-family:'Fredoka One',cursive;font-size:2.5rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+      <p style="font-family:'Sora',sans-serif;font-size:2.2rem;color:var(--primary);text-align:center;font-weight:800;" id="hs-p">0</p>
     </div>
   </div>
 </div>
 
 <script>
 const TEXTS = [
-  "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
-  "How vexingly quick daft zebras jump! The five boxing wizards jump quickly.",
-  "Sphinx of black quartz, judge my vow. Two driven jocks help fax my big quiz.",
-  "A fast runner never stops to look back at those they have left behind.",
-  "The sun sets in the west and rises in the east every single day of the year.",
-  "Learning to type quickly is a skill that will help you for the rest of your life.",
-  "Practice makes perfect when it comes to improving your words per minute score.",
-  "Technology has changed the way we communicate with friends and family worldwide.",
-  "Reading books every day is one of the best habits a person can develop over time.",
-  "The ocean is home to millions of creatures that humans have never seen or studied.",
-  "Mountains, rivers, forests, and deserts all make up the beautiful landscape of Earth.",
-  "A good programmer writes code that is easy to read, maintain, and understand fully.",
-  "Science and mathematics are the foundations upon which modern civilization was built.",
-  "Every journey begins with a single step taken in the right direction with confidence.",
-  "Music brings people together and transcends the barriers of language and culture.",
+  "The quick brown fox jumps over the lazy dog. A journey of a thousand miles begins with a single step.",
+  "Learning to type quickly is one of the most useful skills you can develop in the modern world.",
+  "Practice makes perfect when it comes to improving your typing speed and accuracy over time.",
+  "Technology has changed the way we communicate with people all around the world every single day.",
+  "Reading good books every day is one of the best habits that any person can develop over time.",
+  "The ocean is home to millions of amazing creatures that scientists have never fully studied.",
+  "Mountains, rivers, forests, and deserts all make up the beautiful landscape of planet Earth.",
+  "Science and mathematics are the foundations upon which modern civilization has been built up.",
+  "Every great journey begins with a single step taken in the right direction with confidence.",
+  "Music has the power to bring people together and lift the spirits of everyone who hears it.",
+  "Hard work and dedication are the keys to achieving any goal you set for yourself in life.",
+  "The best way to predict the future is to create it through consistent effort and learning.",
+  "Kindness costs nothing but means everything to the people who receive it every single day.",
+  "Curiosity is the engine of all achievement and the spark that lights the fire of discovery.",
+  "A good friend is hard to find but once found is a treasure worth keeping for your entire life.",
 ];
 
 const LS = 'cgo_hs_typing';
-const getHS = () => parseInt(localStorage.getItem(LS)||'0');
-const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+const getHS = () => parseInt(localStorage.getItem(LS) || '0');
+const setHS = v => { if (v > getHS()) localStorage.setItem(LS, v); };
 
-let text, typed, started, timerID, timeLeft, errors, totalChars;
+let currentText = '';
+let typed = '';
+let started = false;
+let timeLeft = 60;
+let timerID = null;
+let errors = 0;
+let totalTyped = 0;
+let gameActive = false;
 
-function newGame() {
-  text      = TEXTS[Math.floor(Math.random() * TEXTS.length)];
-  typed     = '';
-  started   = false;
-  timeLeft  = 60;
-  errors    = 0;
-  totalChars= 0;
-  clearInterval(timerID);
+// ── LOAD NEW TEXT ──────────────────────────────
+function loadNewText() {
+  currentText = TEXTS[Math.floor(Math.random() * TEXTS.length)];
+  typed = '';
+  renderText('');
   document.getElementById('type-input').value = '';
   document.getElementById('type-input').disabled = false;
   document.getElementById('type-input').focus();
-  document.getElementById('wpm').textContent  = 0;
-  document.getElementById('acc').textContent  = '100%';
-  document.getElementById('timer').textContent = 60;
-  document.getElementById('prog').style.width  = '0%';
   document.getElementById('result-area').innerHTML = '';
-  document.getElementById('best').textContent  = getHS();
-  document.getElementById('hs-p').textContent  = getHS();
-  renderText('');
+  document.getElementById('prog-fill').style.width = '0%';
 }
 
-function renderText(typed) {
-  const chars = text.split('');
-  const html  = chars.map((ch, i) => {
-    if (i < typed.length) {
-      return typed[i] === ch
-        ? `<span class="char-correct">${ch === ' ' ? '&nbsp;' : ch}</span>`
-        : `<span class="char-wrong">${ch === ' ' ? '&nbsp;' : ch}</span>`;
+// ── START / RESET GAME ─────────────────────────
+function startGame() {
+  if (timerID) clearInterval(timerID);
+  timeLeft = 60; errors = 0; totalTyped = 0;
+  started = false; gameActive = true;
+  updateScoreUI(0, 100, 60, getHS());
+  loadNewText();
+  document.getElementById('btn-start').textContent = '🔄 Restart';
+}
+
+// ── RENDER TEXT WITH HIGHLIGHTS ────────────────
+function renderText(userTyped) {
+  if (!currentText) return;
+  const chars = currentText.split('');
+  let html = '';
+
+  chars.forEach((ch, i) => {
+    const display = ch === ' ' ? '&nbsp;' : ch;
+    if (i < userTyped.length) {
+      if (userTyped[i] === ch) {
+        html += `<span class="char-correct">${display}</span>`;
+      } else {
+        html += `<span class="char-wrong">${display}</span>`;
+      }
+    } else if (i === userTyped.length) {
+      html += `<span class="char-current">${display}</span>`;
+    } else {
+      html += `<span class="char-pending">${display}</span>`;
     }
-    if (i === typed.length) return `<span class="char-current">${ch === ' ' ? '&nbsp;' : ch}</span>`;
-    return `<span class="char-pending">${ch === ' ' ? '&nbsp;' : ch}</span>`;
-  }).join('');
+  });
+
   document.getElementById('text-display').innerHTML = html;
 
-  // Scroll current char into view
+  // Scroll current char into view smoothly
   const cur = document.querySelector('.char-current');
-  if (cur) cur.scrollIntoView({ block: 'nearest' });
+  if (cur) {
+    cur.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  }
+
+  // Progress bar
+  const pct = Math.round((userTyped.length / currentText.length) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
 }
 
+// ── TYPING INPUT HANDLER ──────────────────────
+document.getElementById('type-input').addEventListener('input', e => {
+  if (!gameActive) { startGame(); return; }
+
+  const val = e.target.value;
+
+  // Start timer on first keypress
+  if (!started && val.length > 0) {
+    started = true;
+    timerID = setInterval(tickTimer, 1000);
+  }
+
+  typed = val;
+  totalTyped = val.length;
+
+  // Count errors
+  errors = 0;
+  for (let i = 0; i < Math.min(val.length, currentText.length); i++) {
+    if (val[i] !== currentText[i]) errors++;
+  }
+
+  const acc = totalTyped > 0 ? Math.round(((totalTyped - errors) / totalTyped) * 100) : 100;
+  const elapsed = 60 - timeLeft || 1;
+  const wpm = calcWPM(val.replace(/\s/g, '').length, elapsed);
+
+  updateScoreUI(wpm, acc, timeLeft, getHS());
+  renderText(val);
+
+  // Completed all text
+  if (val === currentText) {
+    endGame(true);
+  }
+});
+
+// ── TIMER TICK ────────────────────────────────
+function tickTimer() {
+  timeLeft--;
+  const elapsed = 60 - timeLeft || 1;
+  const val = document.getElementById('type-input').value;
+  const wpm = calcWPM(val.replace(/\s/g, '').length, elapsed);
+  const acc = totalTyped > 0 ? Math.round(((totalTyped - errors) / totalTyped) * 100) : 100;
+  updateScoreUI(wpm, acc, timeLeft, getHS());
+
+  // Urgent timer color when <= 10s
+  const timerEl = document.getElementById('timer');
+  timerEl.classList.toggle('urgent', timeLeft <= 10);
+
+  if (timeLeft <= 0) endGame(false);
+}
+
+// ── END GAME ──────────────────────────────────
+function endGame(completed) {
+  if (timerID) clearInterval(timerID);
+  timerID = null;
+  gameActive = false;
+  document.getElementById('type-input').disabled = true;
+
+  const elapsed = 60 - timeLeft || 1;
+  const val = document.getElementById('type-input').value;
+  const wpm = calcWPM(val.replace(/\s/g, '').length, elapsed);
+  const acc = totalTyped > 0 ? Math.round(((totalTyped - errors) / totalTyped) * 100) : 100;
+
+  setHS(wpm);
+  updateScoreUI(wpm, acc, timeLeft, getHS());
+
+  const rating = wpm >= 100 ? '🏆 Expert!' : wpm >= 70 ? '⭐ Fast!' : wpm >= 40 ? '👍 Good!' : '📖 Keep practising!';
+
+  document.getElementById('result-area').innerHTML = `
+    <div class="result-card">
+      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);margin-bottom:4px">
+        ${completed ? '🎉 Completed!' : '⏱️ Time\'s Up!'}
+      </div>
+      <div style="font-size:1rem;color:var(--primary);font-weight:600;margin-bottom:12px">${rating}</div>
+      <div class="result-stats">
+        <div class="result-stat">
+          <span class="result-stat-val">${wpm}</span>
+          <span class="result-stat-lbl">WPM</span>
+        </div>
+        <div class="result-stat">
+          <span class="result-stat-val" style="color:var(--green)">${acc}%</span>
+          <span class="result-stat-lbl">Accuracy</span>
+        </div>
+        <div class="result-stat">
+          <span class="result-stat-val" style="color:var(--accent)">${getHS()}</span>
+          <span class="result-stat-lbl">Best WPM</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startGame()">▶ Try Again</button>
+    </div>`;
+
+  document.getElementById('hs-p').textContent = getHS();
+}
+
+// ── HELPERS ───────────────────────────────────
 function calcWPM(chars, seconds) {
   return seconds > 0 ? Math.round((chars / 5) / (seconds / 60)) : 0;
 }
 
-document.getElementById('type-input').addEventListener('input', e => {
-  const val = e.target.value;
-
-  if (!started && val.length > 0) {
-    started = true;
-    timerID = setInterval(() => {
-      timeLeft--;
-      document.getElementById('timer').textContent = timeLeft;
-      document.getElementById('prog').style.width = ((60-timeLeft)/60*100) + '%';
-      const words = document.getElementById('type-input').value.trim().split(/\s+/).length;
-      const wpm   = calcWPM(val.replace(/\s/g,'').length, 60-timeLeft);
-      document.getElementById('wpm').textContent = wpm;
-      if (timeLeft <= 0) endGame();
-    }, 1000);
-  }
-
-  typed     = val;
-  totalChars= val.length;
-  errors    = 0;
-  for (let i = 0; i < Math.min(val.length, text.length); i++) {
-    if (val[i] !== text[i]) errors++;
-  }
-  const acc = totalChars ? Math.round(((totalChars-errors)/totalChars)*100) : 100;
-  document.getElementById('acc').textContent = acc + '%';
-  renderText(val);
-
-  if (val === text) endGame(true);
-});
-
-function endGame(completed = false) {
-  clearInterval(timerID);
-  const elapsed   = 60 - timeLeft || 1;
-  const wpm       = calcWPM(typed.replace(/\s/g,'').length, elapsed);
-  const acc       = totalChars ? Math.round(((totalChars-errors)/totalChars)*100) : 100;
-  document.getElementById('type-input').disabled = true;
-  document.getElementById('wpm').textContent     = wpm;
-  setHS(wpm);
-  document.getElementById('best').textContent    = getHS();
-  document.getElementById('hs-p').textContent    = getHS();
-
-  const msg = completed ? '🎉 Completed!' : '⏱️ Time\'s Up!';
-  document.getElementById('result-area').innerHTML = `
-    <div style="text-align:center;padding:16px;background:var(--dark2);border-radius:12px;animation:fadeIn 0.4s ease">
-      <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;margin-bottom:8px">${msg}</div>
-      <div style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
-        <div><div style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent)">${wpm}</div><div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:800">WPM</div></div>
-        <div><div style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--secondary)">${acc}%</div><div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:800">Accuracy</div></div>
-        <div><div style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--blue)">${getHS()}</div><div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:800">Best WPM</div></div>
-      </div>
-      <button class="btn btn-primary" style="margin-top:14px" onclick="newGame()">▶ Try Again</button>
-    </div>`;
+function updateScoreUI(wpm, acc, time, best) {
+  document.getElementById('wpm').textContent  = wpm;
+  document.getElementById('acc').textContent  = acc + '%';
+  document.getElementById('timer').textContent = time;
+  document.getElementById('best').textContent  = best;
+  document.getElementById('hs-p').textContent  = best;
 }
 
-document.getElementById('btn-new').addEventListener('click', newGame);
-document.getElementById('hs-p').textContent = getHS();
-newGame();
+// ── KEYBOARD SHORTCUTS ─────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('type-input').value = '';
+    typed = ''; errors = 0; totalTyped = 0;
+    renderText('');
+    document.getElementById('acc').textContent = '100%';
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    startGame();
+  }
+});
+
+document.getElementById('btn-new').addEventListener('click', () => {
+  if (timerID) clearInterval(timerID);
+  loadNewText();
+  gameActive = false; started = false; timeLeft = 60;
+  updateScoreUI(0, 100, 60, getHS());
+  document.getElementById('result-area').innerHTML = '';
+  document.getElementById('btn-start').textContent = '▶ Start';
+  document.getElementById('timer').classList.remove('urgent');
+});
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+
+// ── INIT ──────────────────────────────────────
+updateScoreUI(0, 100, 60, getHS());
+loadNewText();
 </script>
 </body>
 </html>
