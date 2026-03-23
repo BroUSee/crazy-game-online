@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Geography Quiz — Crazy Game Online</title>
+  <meta name="description" content="Play Geography Quiz! Test your knowledge of countries, capitals, and world landmarks."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .q-cat   { display:inline-block;background:rgba(30,144,255,0.2);color:var(--blue);font-size:0.75rem;font-weight:800;padding:3px 12px;border-radius:50px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px; }
+    .q-text  { font-family:'Fredoka One',cursive;font-size:1.4rem;line-height:1.4;margin-bottom:20px;min-height:72px; }
+    .q-options { display:flex;flex-direction:column;gap:10px; }
+    .q-opt   { padding:13px 18px;border-radius:12px;border:2px solid var(--card-border);background:var(--dark2);cursor:pointer;font-weight:700;font-size:0.9rem;transition:all 0.2s;text-align:left; }
+    .q-opt:hover:not(:disabled) { border-color:var(--blue);background:rgba(30,144,255,0.08); }
+    .q-opt.correct { border-color:var(--secondary)!important;background:rgba(46,213,115,0.15)!important;color:var(--secondary); }
+    .q-opt.wrong   { border-color:var(--primary)!important;background:rgba(255,71,87,0.15)!important;color:var(--primary); }
+    .q-opt:disabled { cursor:default;opacity:0.8; }
+    .q-progress { background:var(--card-border);border-radius:4px;height:6px;margin-bottom:16px;overflow:hidden; }
+    .q-bar { height:100%;background:linear-gradient(90deg,var(--blue),var(--secondary));border-radius:4px;transition:width 0.4s ease; }
+    .flag-display { font-size:3rem;text-align:center;margin:8px 0; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🌍 Geography Quiz</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🌍 Geography Quiz</h1>
+      <button class="btn btn-primary" id="btn-new">🔄 New Quiz</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Question</span><span class="score-value" id="qnum">1/15</span></div>
+      <div class="score-item"><span class="score-label">Correct</span><span class="score-value" id="correct" style="color:var(--secondary)">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">0</span></div>
+    </div>
+    <div class="game-canvas-wrap" style="align-items:flex-start;">
+      <div style="max-width:560px;margin:0 auto;width:100%;" id="quiz-card"></div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🌍 Categories</h3>
+      <ul>
+        <li>🏛️ Capitals of the world</li>
+        <li>🗺️ Countries & continents</li>
+        <li>🏔️ Landmarks</li>
+        <li>🌊 Oceans & rivers</li>
+        <li>🚩 Flags</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {q:"What is the capital of Japan?",a:"Tokyo",opts:["Osaka","Tokyo","Kyoto","Hiroshima"],cat:"🏛️ Capitals",flag:"🇯🇵"},
+  {q:"What is the capital of Brazil?",a:"Brasília",opts:["Rio de Janeiro","São Paulo","Brasília","Salvador"],cat:"🏛️ Capitals",flag:"🇧🇷"},
+  {q:"What is the capital of Australia?",a:"Canberra",opts:["Sydney","Melbourne","Brisbane","Canberra"],cat:"🏛️ Capitals",flag:"🇦🇺"},
+  {q:"What is the capital of Canada?",a:"Ottawa",opts:["Toronto","Vancouver","Ottawa","Montreal"],cat:"🏛️ Capitals",flag:"🇨🇦"},
+  {q:"What is the capital of Egypt?",a:"Cairo",opts:["Cairo","Alexandria","Luxor","Aswan"],cat:"🏛️ Capitals",flag:"🇪🇬"},
+  {q:"What is the capital of South Africa?",a:"Pretoria",opts:["Cape Town","Johannesburg","Pretoria","Durban"],cat:"🏛️ Capitals",flag:"🇿🇦"},
+  {q:"What is the capital of Argentina?",a:"Buenos Aires",opts:["Córdoba","Rosario","Buenos Aires","Mendoza"],cat:"🏛️ Capitals",flag:"🇦🇷"},
+  {q:"Which country has the most people?",a:"India",opts:["China","India","USA","Indonesia"],cat:"🗺️ Countries",flag:"🌍"},
+  {q:"Which is the largest country by area?",a:"Russia",opts:["Canada","USA","China","Russia"],cat:"🗺️ Countries",flag:"🌍"},
+  {q:"On which continent is the Amazon rainforest?",a:"South America",opts:["Africa","Asia","South America","Central America"],cat:"🗺️ Continents",flag:"🌎"},
+  {q:"How many countries are in Africa?",a:"54",opts:["42","48","54","60"],cat:"🗺️ Countries",flag:"🌍"},
+  {q:"Which river is the longest in the world?",a:"The Nile",opts:["The Amazon","The Nile","The Yangtze","The Mississippi"],cat:"🌊 Rivers",flag:"🌍"},
+  {q:"What is the largest desert in the world?",a:"Antarctica (cold desert)",opts:["Sahara","Gobi","Antarctica (cold desert)","Arabian Desert"],cat:"🏔️ Landmarks",flag:"🌍"},
+  {q:"Which mountain is the tallest in the world?",a:"Mount Everest",opts:["K2","Kangchenjunga","Mount Everest","Lhotse"],cat:"🏔️ Landmarks",flag:"🌏"},
+  {q:"The Eiffel Tower is in which city?",a:"Paris",opts:["Rome","Madrid","Berlin","Paris"],cat:"🏔️ Landmarks",flag:"🇫🇷"},
+  {q:"Which country is the Great Wall in?",a:"China",opts:["Japan","China","Korea","Mongolia"],cat:"🏔️ Landmarks",flag:"🇨🇳"},
+  {q:"What is the smallest continent?",a:"Australia",opts:["Europe","Antarctica","Australia","South America"],cat:"🗺️ Continents",flag:"🌏"},
+  {q:"Through how many countries does the Amazon River flow?",a:"9",opts:["3","6","9","12"],cat:"🌊 Rivers",flag:"🌎"},
+  {q:"Which ocean is between Europe/Africa and the Americas?",a:"Atlantic Ocean",opts:["Pacific Ocean","Atlantic Ocean","Indian Ocean","Arctic Ocean"],cat:"🌊 Oceans",flag:"🌊"},
+  {q:"What country has the most natural lakes?",a:"Canada",opts:["Finland","Canada","Russia","USA"],cat:"🗺️ Countries",flag:"🇨🇦"},
+];
+
+const LS='cgo_hs_geoqz';
+const getHS=()=>parseInt(localStorage.getItem(LS)||'0');
+const setHS=v=>{if(v>getHS())localStorage.setItem(LS,v);};
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+let questions, qIdx, score, correct_count;
+
+function newGame(){
+  questions=shuffle([...QUESTIONS]);
+  qIdx=0;score=0;correct_count=0;
+  updateUI();showQ();
+}
+
+function showQ(){
+  const q=questions[qIdx];
+  const opts=shuffle([...q.opts]);
+  document.getElementById('qnum').textContent=`${qIdx+1}/${questions.length}`;
+  document.getElementById('quiz-card').innerHTML=`
+    <div class="q-progress"><div class="q-bar" style="width:${(qIdx/questions.length)*100}%"></div></div>
+    <div class="q-cat">${q.cat}</div>
+    ${q.flag&&q.flag.length<=4?`<div class="flag-display">${q.flag}</div>`:''}
+    <div class="q-text">${q.q}</div>
+    <div class="q-options">
+      ${opts.map((o,i)=>`<button class="q-opt" data-ans="${o}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+    </div>`;
+  document.querySelectorAll('.q-opt').forEach(b=>b.addEventListener('click',()=>answer(b,q)));
+}
+
+function answer(btn, q){
+  document.querySelectorAll('.q-opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.ans===q.a) b.classList.add('correct');
+    if(b===btn&&btn.dataset.ans!==q.a) b.classList.add('wrong');
+  });
+  if(btn.dataset.ans===q.a){score+=100;correct_count++;}
+  else score=Math.max(0,score-25);
+  updateUI();
+  setTimeout(()=>{qIdx++;qIdx<questions.length?showQ():showResult();},1400);
+}
+
+function showResult(){
+  setHS(score);
+  const pct=Math.round(correct_count/questions.length*100);
+  document.getElementById('quiz-card').innerHTML=`
+    <div style="text-align:center;padding:24px;animation:fadeIn 0.4s ease">
+      <div style="font-size:3rem">🌍</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.8rem;margin:12px 0">${pct>=80?'Geography Expert! 🌟':pct>=50?'Well Travelled! 👍':'Keep Exploring! 🗺️'}</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:3rem;color:var(--accent)">${score}</div>
+      <p style="color:var(--text-muted);margin:8px 0">${correct_count}/${questions.length} correct · Best: ${getHS()}</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="newGame()">▶ Try Again</button>
+    </div>`;
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('correct').textContent=correct_count;
+  document.getElementById('best').textContent=getHS();
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+document.getElementById('btn-new').addEventListener('click',newGame);
+newGame();
+</script>
+</body>
+</html> 

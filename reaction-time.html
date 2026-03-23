@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Reaction Time — Crazy Game Online</title>
+  <meta name="description" content="Test your reaction time! Click the button when it turns green. How fast are your reflexes?"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .reaction-box { width:100%;max-width:500px;aspect-ratio:16/9;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;transition:background 0.1s,transform 0.1s;user-select:none;border:3px solid var(--card-border); }
+    .reaction-box.state-wait    { background:#1a1a3e;border-color:var(--card-border); }
+    .reaction-box.state-ready   { background:#6b1c1c;border-color:#8b0000; }
+    .reaction-box.state-go      { background:#1a4a1a;border-color:var(--secondary);transform:scale(1.02); }
+    .reaction-box.state-result  { background:#1a2a4a;border-color:var(--blue); }
+    .reaction-box.state-early   { background:#4a1a1a;border-color:var(--primary); }
+    .reaction-title { font-family:'Fredoka One',cursive;font-size:2.5rem;text-align:center; }
+    .reaction-sub   { font-size:1rem;color:rgba(255,255,255,0.7);text-align:center; }
+    .reaction-time  { font-family:'Fredoka One',cursive;font-size:4rem;color:var(--accent); }
+    .results-grid   { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%; }
+    .res-item { background:var(--dark2);border-radius:10px;padding:10px;text-align:center; }
+    .res-val  { font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--accent); }
+    .res-lbl  { font-size:0.72rem;color:var(--text-muted);font-weight:800;text-transform:uppercase; }
+    .rating   { font-family:'Fredoka One',cursive;font-size:1.2rem; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">⚡ Reaction Time</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">⚡ Reaction Time</h1>
+      <button class="btn btn-primary" id="btn-reset">🔄 Reset Stats</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">-</span></div>
+      <div class="score-item"><span class="score-label">Average</span><span class="score-value" id="avg">-</span></div>
+      <div class="score-item"><span class="score-label">Attempts</span><span class="score-value" id="attempts">0</span></div>
+    </div>
+
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:20px;align-items:center;">
+      <div class="reaction-box state-wait" id="reaction-box">
+        <div class="reaction-title" id="box-title">⚡ Reaction Test</div>
+        <div class="reaction-sub" id="box-sub">Click to start — wait for green!</div>
+      </div>
+      <div class="results-grid" id="results-grid" style="max-width:500px;"></div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>Click the box to start. Wait for it to turn <strong style="color:var(--secondary)">GREEN</strong> — then click as fast as you can!</p>
+    </div>
+    <div class="info-card">
+      <h3>⚡ Rating Guide</h3>
+      <ul>
+        <li>🏆 Under 150ms — Elite!</li>
+        <li>⭐ 150–200ms — Excellent</li>
+        <li>👍 200–250ms — Good</li>
+        <li>😊 250–350ms — Average</li>
+        <li>🐢 Over 350ms — Keep trying!</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 Personal Best</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2.5rem;color:var(--accent);text-align:center;" id="hs-p">-</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS = 'cgo_rt_history';
+let state = 'wait', startTime, timer;
+let history = JSON.parse(localStorage.getItem(LS) || '[]');
+
+function getStats() {
+  if (!history.length) return { best: null, avg: null };
+  return {
+    best: Math.min(...history),
+    avg:  Math.round(history.reduce((a,b)=>a+b,0)/history.length),
+  };
+}
+
+function saveHistory() {
+  localStorage.setItem(LS, JSON.stringify(history.slice(-20)));
+}
+
+function getRating(ms) {
+  if (ms < 150) return { label:'🏆 Elite!',    color:'#ffd32a' };
+  if (ms < 200) return { label:'⭐ Excellent!', color:'#2ed573' };
+  if (ms < 250) return { label:'👍 Good',       color:'#70d170' };
+  if (ms < 350) return { label:'😊 Average',    color:'#ffa502' };
+  return              { label:'🐢 Keep trying!',color:'#a8a8c8' };
+}
+
+function setState(s) {
+  state = s;
+  const box = document.getElementById('reaction-box');
+  box.className = `reaction-box state-${s}`;
+}
+
+function handleClick() {
+  if (state === 'wait') {
+    // Start: show red, random delay then green
+    setState('ready');
+    document.getElementById('box-title').textContent = '🔴 Wait for Green...';
+    document.getElementById('box-sub').textContent   = "Don't click yet!";
+    const delay = 1500 + Math.random() * 3500;
+    timer = setTimeout(() => {
+      setState('go');
+      document.getElementById('box-title').textContent = '🟢 CLICK NOW!';
+      document.getElementById('box-sub').textContent   = '';
+      startTime = performance.now();
+    }, delay);
+
+  } else if (state === 'ready') {
+    // Clicked too early!
+    clearTimeout(timer);
+    setState('early');
+    document.getElementById('box-title').textContent = '😬 Too Early!';
+    document.getElementById('box-sub').textContent   = 'Click to try again';
+    setTimeout(() => { if(state==='early') { setState('wait'); document.getElementById('box-title').textContent='⚡ Reaction Test'; document.getElementById('box-sub').textContent='Click to start — wait for green!'; } }, 1500);
+
+  } else if (state === 'go') {
+    const rt = Math.round(performance.now() - startTime);
+    history.push(rt);
+    saveHistory();
+    const {best, avg} = getStats();
+    const rating = getRating(rt);
+    setState('result');
+    document.getElementById('box-title').innerHTML = `<span style="color:${rating.color}">${rating.label}</span>`;
+    document.getElementById('reaction-time') && document.getElementById('reaction-time').remove();
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'reaction-time';
+    timeEl.id = 'reaction-time';
+    timeEl.textContent = rt + 'ms';
+    document.getElementById('box-title').after(timeEl);
+    document.getElementById('box-sub').textContent = 'Click to try again';
+    updateUI(best, avg);
+    renderHistory();
+
+  } else if (state === 'result' || state === 'early') {
+    setState('wait');
+    document.getElementById('reaction-time') && document.getElementById('reaction-time').remove();
+    document.getElementById('box-title').textContent = '⚡ Reaction Test';
+    document.getElementById('box-sub').textContent   = 'Click to start — wait for green!';
+  }
+}
+
+function updateUI(best, avg) {
+  document.getElementById('best').textContent     = best !== null ? best + 'ms' : '-';
+  document.getElementById('avg').textContent      = avg  !== null ? avg  + 'ms' : '-';
+  document.getElementById('attempts').textContent = history.length;
+  document.getElementById('hs-p').textContent     = best !== null ? best + 'ms' : '-';
+}
+
+function renderHistory() {
+  const g = document.getElementById('results-grid');
+  const recent = [...history].reverse().slice(0, 6);
+  g.innerHTML = recent.map((rt, i) => {
+    const r = getRating(rt);
+    return `<div class="res-item"><div class="res-val" style="color:${r.color}">${rt}ms</div><div class="res-lbl">#${history.length - i}</div></div>`;
+  }).join('');
+}
+
+document.getElementById('reaction-box').addEventListener('click', handleClick);
+document.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter') handleClick(); });
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  history = []; saveHistory();
+  updateUI(null, null);
+  renderHistory();
+});
+
+const {best, avg} = getStats();
+updateUI(best, avg);
+renderHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Word Scramble — Crazy Game Online</title>
+  <meta name="description" content="Play Word Scramble! Unscramble the letters to form the correct word. Free word game."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .scrambled { display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:20px 0; }
+    .letter-tile { width:48px;height:56px;background:var(--dark2);border:2px solid var(--card-border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--accent);transition:all 0.2s;user-select:none; }
+    .letter-tile.dragging { opacity:0.4; }
+    .answer-row { display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:60px;margin:16px 0;padding:10px;border:2px dashed var(--card-border);border-radius:12px; }
+    .answer-row.drag-over { border-color:var(--primary); }
+    .ans-tile { width:48px;height:56px;background:rgba(165,94,234,0.15);border:2px solid var(--purple);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--purple);cursor:pointer;transition:all 0.2s; }
+    .ans-tile:hover { background:rgba(165,94,234,0.3); }
+    .hint-text { color:var(--text-muted);font-size:0.88rem;text-align:center;font-style:italic;min-height:20px; }
+    .category-badge { display:inline-block;background:rgba(30,144,255,0.2);color:var(--blue);font-size:0.75rem;font-weight:800;padding:3px 12px;border-radius:50px;text-transform:uppercase;letter-spacing:1px; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🔤 Word Scramble</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🔤 Word Scramble</h1>
+      <div class="game-controls-bar">
+        <button class="btn btn-secondary" id="btn-hint">💡 Hint</button>
+        <button class="btn btn-secondary" id="btn-skip">⏭ Skip</button>
+        <button class="btn btn-primary" id="btn-check">✓ Check</button>
+      </div>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Word</span><span class="score-value" id="wnum">1</span></div>
+      <div class="score-item"><span class="score-label">Time</span><span class="score-value" id="timer">30</span></div>
+      <div class="score-item" style="margin-left:auto;">
+        <div class="difficulty-btns">
+          <button class="diff-btn active" data-diff="easy">Easy</button>
+          <button class="diff-btn" data-diff="medium">Medium</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+      </div>
+    </div>
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:16px;align-items:center;">
+      <div id="category-wrap"></div>
+      <div class="hint-text" id="hint-text">Unscramble the letters to form the word!</div>
+      <div class="scrambled" id="scrambled"></div>
+      <p style="color:var(--text-muted);font-size:0.82rem;">Click letters to build your answer ↓</p>
+      <div class="answer-row" id="answer-row"></div>
+      <div id="feedback" style="font-family:'Fredoka One',cursive;font-size:1.4rem;min-height:32px;text-align:center;"></div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>Click the scrambled letters in the right order to spell the word. Use the hint if you're stuck!</p>
+    </div>
+    <div class="info-card">
+      <h3>📊 Scoring</h3>
+      <ul>
+        <li>✅ Correct: +100 pts</li>
+        <li>💡 Hint used: -30 pts</li>
+        <li>⏭ Skipped: -50 pts</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORDS = {
+  easy:[
+    {word:'APPLE',  hint:'A red or green fruit'},
+    {word:'HOUSE',  hint:'A place where people live'},
+    {word:'WATER',  hint:'H₂O — we need it to survive'},
+    {word:'TIGER',  hint:'A large striped big cat'},
+    {word:'CLOUD',  hint:'White fluffy things in the sky'},
+    {word:'BREAD',  hint:'You put butter on this'},
+    {word:'CLOCK',  hint:'Tells you the time'},
+    {word:'DREAM',  hint:'Happens while you sleep'},
+    {word:'EARTH',  hint:'Our home planet'},
+    {word:'FLAME',  hint:'What fire produces'},
+    {word:'GRAPE',  hint:'Small purple or green fruit'},
+    {word:'HEART',  hint:'Pumps blood around your body'},
+    {word:'LIGHT',  hint:'What a bulb produces'},
+    {word:'MONEY',  hint:'Used to buy things'},
+    {word:'NIGHT',  hint:'Opposite of day'},
+    {word:'OCEAN',  hint:'A huge body of salt water'},
+    {word:'PIANO',  hint:'A musical instrument with keys'},
+    {word:'QUEEN',  hint:'Female ruler of a kingdom'},
+    {word:'RADIO',  hint:'Plays music wirelessly'},
+    {word:'SWORD',  hint:'A long bladed weapon'},
+  ],
+  medium:[
+    {word:'BRIDGE',   hint:'Connects two sides of a gap'},
+    {word:'CAMERA',   hint:'Takes photographs'},
+    {word:'DESERT',   hint:'Sandy hot dry landscape'},
+    {word:'FLOWER',   hint:'Colourful plant bloom'},
+    {word:'GARDEN',   hint:'Where plants grow outside'},
+    {word:'JUNGLE',   hint:'Dense tropical forest'},
+    {word:'KNIGHT',   hint:'Armoured medieval warrior'},
+    {word:'PLANET',   hint:'Orbits a star like our Sun'},
+    {word:'ROCKET',   hint:'Goes to space'},
+    {word:'SCHOOL',   hint:'Where students learn'},
+    {word:'SILVER',   hint:'Shiny grey precious metal'},
+    {word:'SPIDER',   hint:'8-legged arachnid'},
+    {word:'SUMMER',   hint:'Hot season of the year'},
+    {word:'WINTER',   hint:'Cold season of the year'},
+    {word:'YELLOW',   hint:'Colour of the sun'},
+    {word:'TURKEY',   hint:'Bird eaten at Thanksgiving'},
+    {word:'PUZZLE',   hint:'A game with pieces to fit'},
+    {word:'CANDLE',   hint:'Wax stick that burns for light'},
+  ],
+  hard:[
+    {word:'BALANCE',  hint:'Equal weight on both sides'},
+    {word:'CAPTAIN',  hint:'Leader of a ship or team'},
+    {word:'DIAMOND',  hint:'Hardest natural substance'},
+    {word:'ELEMENT',  hint:'Basic substance in chemistry'},
+    {word:'FREEDOM',  hint:'Liberty — being free'},
+    {word:'GRAVITY',  hint:'Force that pulls things down'},
+    {word:'HORIZON',  hint:'Where sky meets the ground'},
+    {word:'JOURNEY',  hint:'A long trip or travel'},
+    {word:'KINGDOM',  hint:'Land ruled by a king or queen'},
+    {word:'LANTERN',  hint:'Light inside a glass case'},
+    {word:'MYSTERY',  hint:'Something unexplained'},
+    {word:'NETWORK',  hint:'A connected system'},
+    {word:'PALACE',   hint:'Royal residence'},
+    {word:'QUARTER',  hint:'One fourth of something'},
+    {word:'RAINBOW',  hint:'Colourful arc after rain'},
+    {word:'SILENCE',  hint:'Complete absence of sound'},
+    {word:'THUNDER',  hint:'Loud sound during a storm'},
+    {word:'VICTORY',  hint:'Winning a battle or competition'},
+  ],
+};
+
+let diff='easy', score=0, wnum=1, hintUsed, timeLeft, timerID, current, userAnswer, wordPool, poolIdx;
+const LS='cgo_hs_scramble';
+const getHS=()=>parseInt(localStorage.getItem(LS)||'0');
+const setHS=v=>{if(v>getHS())localStorage.setItem(LS,v);};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function scramble(word){
+  let s;
+  do { s=shuffle([...word]).join(''); } while(s===word);
+  return s;
+}
+
+function newRound(){
+  if(!wordPool||poolIdx>=wordPool.length){
+    wordPool=shuffle([...WORDS[diff]]);
+    poolIdx=0;
+  }
+  current   = wordPool[poolIdx++];
+  hintUsed  = false;
+  userAnswer= [];
+  timeLeft  = diff==='easy'?45:diff==='medium'?35:25;
+  clearInterval(timerID);
+  timerID=setInterval(tick,1000);
+  document.getElementById('hint-text').textContent='Unscramble the letters to form the word!';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('category-wrap').innerHTML=`<span class="category-badge">Word #${wnum}</span>`;
+  renderScrambled(scramble(current.word));
+  renderAnswer();
+  document.getElementById('wnum').textContent=wnum;
+  document.getElementById('timer').textContent=timeLeft;
+}
+
+function tick(){
+  timeLeft--;
+  document.getElementById('timer').textContent=timeLeft;
+  if(timeLeft<=0){ clearInterval(timerID); reveal(false); }
+}
+
+function renderScrambled(letters){
+  const div=document.getElementById('scrambled');
+  div.innerHTML=letters.split('').map((l,i)=>`<div class="letter-tile" data-i="${i}" data-letter="${l}">${l}</div>`).join('');
+  div.querySelectorAll('.letter-tile').forEach(t=>t.addEventListener('click',()=>pickLetter(t)));
+}
+
+function renderAnswer(){
+  const div=document.getElementById('answer-row');
+  div.innerHTML=userAnswer.map((l,i)=>`<div class="ans-tile" data-ai="${i}">${l}</div>`).join('');
+  div.querySelectorAll('.ans-tile').forEach(t=>t.addEventListener('click',()=>unpick(parseInt(t.dataset.ai))));
+}
+
+function pickLetter(tile){
+  if(userAnswer.length>=current.word.length) return;
+  tile.style.visibility='hidden';
+  tile.dataset.hidden='1';
+  userAnswer.push(tile.dataset.letter);
+  renderAnswer();
+  if(userAnswer.length===current.word.length) autoCheck();
+}
+
+function unpick(idx){
+  const letter=userAnswer[idx];
+  userAnswer.splice(idx,1);
+  // Re-show the tile in scrambled
+  const tiles=document.querySelectorAll('#scrambled .letter-tile');
+  for(const t of tiles){
+    if(t.dataset.letter===letter && t.dataset.hidden==='1'){
+      t.style.visibility='visible';
+      t.dataset.hidden='';
+      break;
+    }
+  }
+  renderAnswer();
+}
+
+function autoCheck(){ checkAnswer(); }
+
+function checkAnswer(){
+  const formed=userAnswer.join('');
+  if(formed.length<current.word.length){ showFeedback('Fill in all letters first!',''); return; }
+  if(formed===current.word){
+    clearInterval(timerID);
+    const pts=100+(hintUsed?-30:0);
+    score+=pts; wnum++;
+    setHS(score);
+    showFeedback(`✓ Correct! +${pts} points`,'correct');
+    setTimeout(newRound,1200);
+  } else {
+    showFeedback('✗ Not right — try again!','wrong');
+    userAnswer=[];
+    document.querySelectorAll('#scrambled .letter-tile').forEach(t=>{t.style.visibility='visible';t.dataset.hidden='';});
+    renderAnswer();
+  }
+  updateUI();
+}
+
+function reveal(correct){
+  showFeedback(`Answer: ${current.word}`,'wrong');
+  score=Math.max(0,score-50); wnum++;
+  updateUI();
+  setTimeout(newRound,1600);
+}
+
+function showFeedback(msg,type){
+  const f=document.getElementById('feedback');
+  f.textContent=msg;
+  f.style.color=type==='correct'?'var(--secondary)':type==='wrong'?'var(--primary)':'var(--text-muted)';
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('wnum').textContent=wnum;
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+document.getElementById('btn-hint').addEventListener('click',()=>{
+  hintUsed=true;
+  score=Math.max(0,score-30);
+  document.getElementById('hint-text').textContent=`Hint: ${current.hint}`;
+  updateUI();
+});
+document.getElementById('btn-skip').addEventListener('click',()=>reveal(false));
+document.getElementById('btn-check').addEventListener('click',checkAnswer);
+
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-diff]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); diff=b.dataset.diff; wordPool=null; newRound();
+}));
+
+document.getElementById('hs-p').textContent=getHS();
+newRound();
+</script>
+</body>
+</html>

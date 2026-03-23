@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Color Match — Crazy Game Online</title>
+  <meta name="description" content="Play Color Match! The Stroop challenge — match the ink colour not the word. Tricky brain game!"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .color-word { font-family:'Fredoka One',cursive;font-size:4.5rem;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;transition:all 0.1s; }
+    .color-btns { display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:400px;margin:0 auto;width:100%; }
+    .color-btn { padding:16px 12px;border-radius:14px;border:3px solid transparent;font-family:'Fredoka One',cursive;font-size:1.3rem;cursor:pointer;transition:all 0.15s;color:white; }
+    .color-btn:hover { transform:scale(1.05);filter:brightness(1.15); }
+    .color-btn:active { transform:scale(0.97); }
+    .color-btn.correct-flash { border-color:var(--secondary)!important;box-shadow:0 0 20px rgba(46,213,115,0.5); }
+    .color-btn.wrong-flash   { border-color:var(--primary)!important;box-shadow:0 0 20px rgba(255,71,87,0.5); }
+    .instructions-txt { font-size:1rem;color:var(--text-muted);text-align:center;padding:0 12px; }
+    .instructions-txt strong { color:var(--accent); }
+    .timer-bar { height:8px;background:var(--card-border);border-radius:4px;overflow:hidden; }
+    .timer-fill { height:100%;background:linear-gradient(90deg,var(--secondary),var(--accent));transition:width 0.1s linear; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🎨 Color Match</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🎨 Color Match</h1>
+      <button class="btn btn-primary" id="btn-start">▶ Start</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Streak</span><span class="score-value" id="streak">0🔥</span></div>
+      <div class="score-item"><span class="score-label">Time</span><span class="score-value" id="timer">30</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">0</span></div>
+    </div>
+    <div style="padding:0 16px 8px;"><div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div></div>
+
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:24px;" id="game-area">
+      <!-- Start screen -->
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:4rem;margin-bottom:16px">🎨</div>
+        <h2 style="font-family:'Fredoka One',cursive;font-size:1.8rem;margin-bottom:12px">Color Match Challenge!</h2>
+        <p class="instructions-txt">Click the button matching the <strong>INK COLOR</strong> of the word — NOT what the word says!</p>
+        <br/>
+        <p class="instructions-txt">Example: <span style="color:#ff4757;font-family:'Fredoka One',cursive;font-size:1.4rem">BLUE</span> → click <strong style="color:#ff4757">RED</strong></p>
+        <br/>
+        <button class="btn btn-primary" style="margin-top:8px" onclick="startGame()">▶ Play Now</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🧠 The Challenge</h3>
+      <p>Your brain wants to read the word — but you must click the <strong>colour of the ink</strong>. It's harder than it sounds!</p>
+    </div>
+    <div class="info-card">
+      <h3>📊 Scoring</h3>
+      <ul>
+        <li>✅ Correct: +10 pts</li>
+        <li>🔥 Streak x2 bonus</li>
+        <li>❌ Wrong: -5 pts + reset streak</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2.5rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  { name:'RED',    hex:'#ff4757' },
+  { name:'BLUE',   hex:'#1e90ff' },
+  { name:'GREEN',  hex:'#2ed573' },
+  { name:'YELLOW', hex:'#ffd32a' },
+  { name:'PURPLE', hex:'#a55eea' },
+  { name:'ORANGE', hex:'#ffa502' },
+];
+
+const LS = 'cgo_hs_colormatch';
+const getHS = () => parseInt(localStorage.getItem(LS)||'0');
+const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+
+let score, streak, timeLeft, timerID, correctColor, running;
+
+function startGame() {
+  score=0; streak=0; timeLeft=30; running=true;
+  clearInterval(timerID);
+  timerID=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('timer').textContent=timeLeft;
+    document.getElementById('timer-fill').style.width=(timeLeft/30*100)+'%';
+    if(timeLeft<=0) endGame();
+  },1000);
+  document.getElementById('btn-start').textContent='⏹ Stop';
+  nextRound();
+}
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function nextRound() {
+  if (!running) return;
+  // Pick ink color and word (word != ink color most of the time for challenge)
+  const inkColor  = COLORS[Math.floor(Math.random()*COLORS.length)];
+  const wordColor = Math.random() > 0.3 ? COLORS[Math.floor(Math.random()*COLORS.length)] : inkColor;
+  correctColor    = inkColor.name;
+
+  // Pick 4 options including the correct one
+  const others = shuffle(COLORS.filter(c=>c.name!==inkColor.name)).slice(0,3);
+  const options = shuffle([inkColor, ...others]);
+
+  document.getElementById('game-area').innerHTML = `
+    <div class="color-word" style="color:${inkColor.hex}">${wordColor.name}</div>
+    <p class="instructions-txt" style="margin-top:-8px">Click the <strong>ink colour</strong> of the word above!</p>
+    <div class="color-btns" id="color-btns">
+      ${options.map(c=>`<button class="color-btn" style="background:${c.hex};" data-color="${c.name}">${c.name}</button>`).join('')}
+    </div>
+  `;
+  document.querySelectorAll('.color-btn').forEach(b=>b.addEventListener('click',()=>answer(b)));
+}
+
+function answer(btn) {
+  if (!running) return;
+  const chosen = btn.dataset.color;
+  document.querySelectorAll('.color-btn').forEach(b=>b.disabled=true);
+
+  if (chosen === correctColor) {
+    streak++;
+    const bonus = streak >= 3 ? streak : 0;
+    score += 10 + bonus;
+    btn.classList.add('correct-flash');
+  } else {
+    score = Math.max(0, score-5);
+    streak = 0;
+    btn.classList.add('wrong-flash');
+    document.querySelectorAll('.color-btn').forEach(b=>{ if(b.dataset.color===correctColor) b.classList.add('correct-flash'); });
+  }
+  updateUI();
+  setTimeout(nextRound, 500);
+}
+
+function endGame() {
+  running = false;
+  clearInterval(timerID);
+  setHS(score);
+  document.getElementById('btn-start').textContent = '▶ Start';
+  document.getElementById('game-area').innerHTML = `
+    <div style="text-align:center;padding:32px 20px;animation:fadeIn 0.4s ease">
+      <div style="font-size:3rem">🎨</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:2rem;margin:12px 0">Time's Up!</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:3.5rem;color:var(--accent)">${score}</div>
+      <p style="color:var(--text-muted);margin:8px 0">Best: ${getHS()}</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="startGame()">▶ Play Again</button>
+    </div>`;
+  document.getElementById('hs-p').textContent = getHS();
+}
+
+function updateUI() {
+  document.getElementById('score').textContent  = score;
+  document.getElementById('streak').textContent = streak>0?`${streak}🔥`:'0';
+  document.getElementById('hs-p').textContent   = getHS();
+}
+
+document.getElementById('btn-start').addEventListener('click',()=>{ running?endGame():startGame(); });
+document.getElementById('hs-p').textContent = getHS();
+document.getElementById('best').textContent  = getHS();
+</script>
+</body>
+</html>

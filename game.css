@@ -1,0 +1,391 @@
+/* =============================================
+   CRAZY GAME ONLINE — Game Page Stylesheet
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  --primary: #ff4757;
+  --primary-dark: #c0392b;
+  --secondary: #2ed573;
+  --accent: #ffa502;
+  --purple: #a55eea;
+  --blue: #1e90ff;
+  --dark: #0f0e17;
+  --dark2: #1a1a2e;
+  --dark3: #16213e;
+  --card-bg: #1e1e3a;
+  --card-border: #2d2d5e;
+  --text: #fffffe;
+  --text-muted: #a8a8c8;
+  --radius: 16px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ---- GAME NAVBAR ---- */
+.game-nav {
+  background: rgba(15,14,23,0.95);
+  border-bottom: 1px solid rgba(255,71,87,0.2);
+  padding: 0 24px;
+  backdrop-filter: blur(16px);
+}
+
+.game-nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  transition: var(--transition);
+  padding: 8px 14px;
+  border-radius: 50px;
+  border: 1px solid var(--card-border);
+  white-space: nowrap;
+}
+
+.back-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+.game-nav-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.2rem;
+  color: var(--text);
+  flex: 1;
+}
+
+.game-nav-logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.2rem;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+/* ---- GAME WRAPPER ---- */
+.game-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+}
+
+@media (max-width: 860px) {
+  .game-wrapper { grid-template-columns: 1fr; }
+}
+
+/* ---- GAME STAGE ---- */
+.game-stage {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.game-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.6rem;
+}
+
+.game-controls-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); transform: scale(1.03); }
+
+.btn-secondary { background: var(--card-border); color: var(--text); }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+.btn-green { background: var(--secondary); color: var(--dark); }
+.btn-green:hover { filter: brightness(0.9); }
+
+/* ---- SCORE BAR ---- */
+.score-bar {
+  display: flex;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--card-border);
+  flex-wrap: wrap;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+.score-value {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+/* ---- CANVAS / GAME AREA ---- */
+.game-canvas-wrap {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 400px;
+}
+
+canvas {
+  border-radius: var(--radius-sm, 10px);
+  max-width: 100%;
+}
+
+/* ---- GAME INFO PANEL ---- */
+.game-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.info-card h3 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+
+.info-card p, .info-card li {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.info-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+.info-card ul li { display: flex; align-items: center; gap: 10px; }
+
+.key-badge {
+  display: inline-block;
+  background: var(--card-border);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-family: monospace;
+}
+
+/* ---- MODAL / OVERLAY ---- */
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15,14,23,0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border-radius: var(--radius);
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.overlay-icon { font-size: 4rem; }
+
+.overlay-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.overlay-sub {
+  color: var(--text-muted);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.overlay-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ---- LEADERBOARD ---- */
+.lb-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+.lb-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+}
+
+.lb-rank {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  width: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.lb-rank.gold   { color: #ffd700; }
+.lb-rank.silver { color: #c0c0c0; }
+.lb-rank.bronze { color: #cd7f32; }
+
+.lb-name { flex: 1; font-weight: 700; font-size: 0.88rem; }
+
+.lb-score {
+  font-family: 'Fredoka One', cursive;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+/* ---- PLAYER INDICATORS (2P) ---- */
+.player-indicators {
+  display: flex;
+  gap: 16px;
+  padding: 12px 24px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.player-ind {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  border: 2px solid transparent;
+  transition: var(--transition);
+}
+
+.player-ind.active { border-color: var(--primary); background: rgba(255,71,87,0.1); }
+
+.player-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+}
+
+.p1-dot { background: var(--primary); }
+.p2-dot { background: var(--blue); }
+
+.player-name { font-weight: 700; font-size: 0.88rem; }
+.player-score { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--accent); }
+
+/* ---- DIFFICULTY SELECTOR ---- */
+.difficulty-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.diff-btn {
+  padding: 6px 16px;
+  border-radius: 50px;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.diff-btn:hover { border-color: var(--accent); color: var(--accent); }
+.diff-btn.active { background: var(--accent); border-color: var(--accent); color: var(--dark); }
+
+/* ---- GRID GAME CELLS ---- */
+.grid-game {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 2px solid var(--card-border);
+  background: var(--dark2);
+}
+
+.cell:hover { transform: scale(1.05); border-color: var(--primary); }
+
+/* ---- ANIMATIONS ---- */
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+
+.pop    { animation: pop 0.3s ease; }
+.shake  { animation: shake 0.4s ease; }
+.fadein { animation: fadeIn 0.4s ease; }
+
+/* ---- MISC UTILITY ---- */
+.text-center { text-align: center; }
+.mt-16 { margin-top: 16px; }
+.hidden { display: none !important; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+  .game-canvas-wrap { padding: 12px; min-height: 300px; }
+  .score-bar { gap: 10px; }
+  .game-header { padding: 14px 16px; }
+}

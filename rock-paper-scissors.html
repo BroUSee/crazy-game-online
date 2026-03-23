@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Rock Paper Scissors — Crazy Game Online</title>
+  <meta name="description" content="Play Rock Paper Scissors online! Challenge the AI or a friend. Free classic hand game."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✊</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .rps-choices { display:flex;gap:16px;justify-content:center;flex-wrap:wrap; }
+    .rps-btn { width:110px;height:110px;border-radius:20px;border:3px solid var(--card-border);background:var(--dark2);font-size:3rem;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px; }
+    .rps-btn span.lbl { font-size:0.7rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px; }
+    .rps-btn:hover { border-color:var(--primary);transform:scale(1.08);background:rgba(255,71,87,0.08); }
+    .rps-btn:active { transform:scale(0.95); }
+    .battle-area { display:flex;align-items:center;justify-content:center;gap:32px;font-size:5rem;min-height:100px; }
+    .battle-label { font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);text-align:center;margin-top:4px; }
+    .result-msg { font-family:'Fredoka One',cursive;font-size:2rem;text-align:center;min-height:48px;transition:all 0.3s; }
+    .result-win  { color:var(--secondary); }
+    .result-lose { color:var(--primary); }
+    .result-draw { color:var(--accent); }
+    .sc-board { display:flex;gap:20px;justify-content:center; }
+    .sc-box { background:var(--dark2);border-radius:12px;padding:10px 24px;text-align:center;min-width:70px; }
+    .sc-num { font-family:'Fredoka One',cursive;font-size:2rem; }
+    .sc-lbl { font-size:0.72rem;color:var(--text-muted);font-weight:800;text-transform:uppercase; }
+    @keyframes shake2 { 0%,100%{transform:translateY(0)}25%{transform:translateY(-12px)}75%{transform:translateY(8px)} }
+    .shake2 { animation:shake2 0.5s ease; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">✊ Rock Paper Scissors</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">✊ Rock Paper Scissors</h1>
+      <div class="game-controls-bar">
+        <button class="btn btn-secondary" id="btn-mode">🤖 vs AI</button>
+        <button class="btn btn-secondary" id="btn-reset">🔄 Reset</button>
+      </div>
+    </div>
+
+    <div class="score-bar" style="justify-content:center;">
+      <div class="sc-board">
+        <div class="sc-box"><div class="sc-num" id="s-you" style="color:var(--primary)">0</div><div class="sc-lbl">You</div></div>
+        <div class="sc-box"><div class="sc-num" id="s-draw" style="color:var(--text-muted)">0</div><div class="sc-lbl">Draw</div></div>
+        <div class="sc-box"><div class="sc-num" id="s-opp" style="color:var(--blue)">0</div><div class="sc-lbl" id="opp-lbl">AI</div></div>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:24px;">
+      <div class="battle-area">
+        <div style="text-align:center;">
+          <div id="you-hand" class="shake2">✊</div>
+          <div class="battle-label">You</div>
+        </div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--text-muted)">VS</div>
+        <div style="text-align:center;">
+          <div id="opp-hand" class="shake2">✊</div>
+          <div class="battle-label" id="opp-name">AI</div>
+        </div>
+      </div>
+
+      <div class="result-msg" id="result-msg">Choose your move! 👇</div>
+
+      <div class="rps-choices">
+        <button class="rps-btn" data-choice="rock">✊<span class="lbl">Rock</span></button>
+        <button class="rps-btn" data-choice="paper">🖐️<span class="lbl">Paper</span></button>
+        <button class="rps-btn" data-choice="scissors">✌️<span class="lbl">Scissors</span></button>
+        <button class="rps-btn" data-choice="lizard">🦎<span class="lbl">Lizard</span></button>
+        <button class="rps-btn" data-choice="spock">🖖<span class="lbl">Spock</span></button>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.8rem;text-align:center;" id="mode-label">Bonus mode: Rock Paper Scissors Lizard Spock!</p>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>📋 Rules</h3>
+      <ul>
+        <li>✊ Rock beats ✌️ Scissors & 🦎 Lizard</li>
+        <li>🖐️ Paper beats ✊ Rock & 🖖 Spock</li>
+        <li>✌️ Scissors beats 🖐️ Paper & 🦎 Lizard</li>
+        <li>🦎 Lizard beats 🖖 Spock & 🖐️ Paper</li>
+        <li>🖖 Spock beats ✌️ Scissors & ✊ Rock</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 Win Rate</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="winrate">0%</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const EMOJI = { rock:'✊', paper:'🖐️', scissors:'✌️', lizard:'🦎', spock:'🖖' };
+const BEATS = {
+  rock:     ['scissors','lizard'],
+  paper:    ['rock','spock'],
+  scissors: ['paper','lizard'],
+  lizard:   ['spock','paper'],
+  spock:    ['scissors','rock'],
+};
+let scores = {you:0, opp:0, draw:0};
+let vsAI = true, p2Waiting = false, p2Choice = null;
+let totalGames = 0;
+
+function play(choice) {
+  let oppChoice;
+  if (vsAI) {
+    const options = Object.keys(EMOJI);
+    oppChoice = options[Math.floor(Math.random() * options.length)];
+    resolve(choice, oppChoice);
+  } else {
+    if (!p2Waiting) {
+      p2Waiting = true;
+      p2Choice  = choice;
+      document.getElementById('result-msg').textContent = 'Player 1 chose! Now Player 2 pick ↓';
+      document.getElementById('result-msg').className  = 'result-msg';
+      document.getElementById('you-hand').textContent  = '🤫';
+    } else {
+      resolve(p2Choice, choice);
+      p2Waiting = false; p2Choice = null;
+    }
+  }
+}
+
+function resolve(c1, c2) {
+  totalGames++;
+  document.getElementById('you-hand').textContent  = EMOJI[c1];
+  document.getElementById('opp-hand').textContent  = EMOJI[c2];
+  document.getElementById('you-hand').classList.remove('shake2');
+  document.getElementById('opp-hand').classList.remove('shake2');
+  void document.getElementById('you-hand').offsetWidth;
+  document.getElementById('you-hand').classList.add('shake2');
+  document.getElementById('opp-hand').classList.add('shake2');
+
+  let msg, cls;
+  if (c1 === c2) {
+    scores.draw++;
+    msg = "It's a Draw! 🤝"; cls = 'result-msg result-draw';
+  } else if (BEATS[c1].includes(c2)) {
+    scores.you++;
+    msg = vsAI ? '🎉 You Win!' : '🎉 Player 1 Wins!'; cls = 'result-msg result-win';
+  } else {
+    scores.opp++;
+    msg = vsAI ? '🤖 AI Wins!' : '🎉 Player 2 Wins!'; cls = 'result-msg result-lose';
+  }
+
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-msg').className   = cls;
+  document.getElementById('s-you').textContent  = scores.you;
+  document.getElementById('s-opp').textContent  = scores.opp;
+  document.getElementById('s-draw').textContent = scores.draw;
+
+  const wr = totalGames ? Math.round(scores.you/totalGames*100) : 0;
+  document.getElementById('winrate').textContent = wr + '%';
+}
+
+document.querySelectorAll('.rps-btn').forEach(b => b.addEventListener('click', () => play(b.dataset.choice)));
+
+document.getElementById('btn-mode').addEventListener('click', () => {
+  vsAI = !vsAI; p2Waiting = false; p2Choice = null;
+  document.getElementById('btn-mode').textContent  = vsAI ? '🤖 vs AI' : '👥 2 Players';
+  document.getElementById('opp-lbl').textContent   = vsAI ? 'AI' : 'P2';
+  document.getElementById('opp-name').textContent  = vsAI ? 'AI' : 'Player 2';
+  document.getElementById('result-msg').textContent = vsAI ? 'Choose your move! 👇' : 'Player 1 — choose first!';
+  document.getElementById('result-msg').className   = 'result-msg';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  scores = {you:0, opp:0, draw:0}; totalGames = 0; p2Waiting = false;
+  document.getElementById('s-you').textContent  = 0;
+  document.getElementById('s-opp').textContent  = 0;
+  document.getElementById('s-draw').textContent = 0;
+  document.getElementById('you-hand').textContent = '✊';
+  document.getElementById('opp-hand').textContent = '✊';
+  document.getElementById('result-msg').textContent = 'Choose your move! 👇';
+  document.getElementById('result-msg').className   = 'result-msg';
+  document.getElementById('winrate').textContent = '0%';
+});
+</script>
+</body>
+</html>

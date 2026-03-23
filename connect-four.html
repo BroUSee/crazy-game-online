@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Connect Four — Crazy Game Online</title>
+  <meta name="description" content="Play Connect Four online! Drop discs and connect 4 in a row. Play vs friend or AI."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔴</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .c4-board { background:#1e3a6e;border-radius:14px;padding:10px;display:inline-block; }
+    .c4-grid  { display:grid;grid-template-columns:repeat(7,1fr);gap:6px; }
+    .c4-col   { display:contents;cursor:pointer; }
+    .c4-cell  { width:46px;height:46px;border-radius:50%;background:#0f1e3a;border:2px solid #0a1428;transition:all 0.2s; }
+    .c4-cell.p1 { background:#ff4757;box-shadow:0 0 8px rgba(255,71,87,0.5); }
+    .c4-cell.p2 { background:#ffd32a;box-shadow:0 0 8px rgba(255,211,42,0.5); }
+    .c4-cell.win { animation:pulse 0.6s ease infinite; }
+    .col-hover { cursor:pointer; }
+    .col-hover:hover .c4-cell:first-child { background:rgba(255,255,255,0.1); }
+    .c4-wrapper { display:flex;flex-direction:column;align-items:center;gap:12px; }
+    .drop-zone { display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 10px 6px; }
+    .drop-arrow { width:46px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:transparent;transition:color 0.2s;cursor:pointer; }
+    .drop-arrow.p1-arrow:hover { color:var(--primary); }
+    .drop-arrow.p2-arrow:hover { color:var(--accent); }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🔴 Connect Four</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🔴 Connect Four</h1>
+      <div class="game-controls-bar">
+        <button class="btn btn-secondary" id="btn-mode">🤖 vs AI</button>
+        <button class="btn btn-primary" id="btn-new">🔄 New</button>
+      </div>
+    </div>
+    <div class="player-indicators">
+      <div class="player-ind active" id="p1ind">
+        <div class="player-dot" style="background:var(--primary)"></div>
+        <span class="player-name">Player 1</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div style="font-family:'Fredoka One',cursive;color:var(--text-muted);margin:0 auto;">vs</div>
+      <div class="player-ind" id="p2ind">
+        <div class="player-dot" style="background:var(--accent)"></div>
+        <span class="player-name" id="p2name">AI</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+    </div>
+    <div class="game-canvas-wrap">
+      <div class="c4-wrapper">
+        <div id="status" style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--accent)">🔴 Player 1's Turn</div>
+        <div class="drop-zone" id="drop-zone"></div>
+        <div class="c4-board"><div class="c4-grid" id="c4-grid"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>Click a column to drop your disc. Connect 4 discs in a row (horizontal, vertical, diagonal) to win!</p>
+    </div>
+    <div class="info-card">
+      <h3>💡 Strategy</h3>
+      <p>Control the center column. Block your opponent's 3-in-a-row before they complete 4!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROWS=6, COLS=7;
+let board, current, scores, vsAI, gameOver;
+scores = {1:0, 2:0};
+vsAI   = true;
+
+function newGame() {
+  board    = Array.from({length:ROWS},()=>Array(COLS).fill(0));
+  current  = 1;
+  gameOver = false;
+  renderBoard();
+  renderDrop();
+  setStatus();
+}
+
+function renderBoard() {
+  const g = document.getElementById('c4-grid');
+  g.innerHTML = '';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const d = document.createElement('div');
+    d.className = 'c4-cell' + (board[r][c]?` p${board[r][c]}`:'');
+    d.dataset.r=r; d.dataset.c=c;
+    g.appendChild(d);
+  }
+}
+
+function renderDrop() {
+  const dz = document.getElementById('drop-zone');
+  dz.innerHTML = Array.from({length:COLS},(_,c)=>`
+    <div class="drop-arrow p${current}-arrow" data-col="${c}">▼</div>
+  `).join('');
+  dz.querySelectorAll('[data-col]').forEach(el=>el.addEventListener('click',()=>drop(parseInt(el.dataset.col))));
+  document.getElementById('c4-grid').querySelectorAll('.c4-cell').forEach(el=>{
+    el.addEventListener('click',()=>drop(parseInt(el.dataset.c)));
+  });
+}
+
+function drop(col) {
+  if(gameOver) return;
+  for(let r=ROWS-1;r>=0;r--){
+    if(!board[r][col]){
+      board[r][col]=current;
+      renderBoard();
+      const win=checkWin(r,col,current);
+      if(win){
+        win.forEach(([wr,wc])=>document.querySelector(`[data-r="${wr}"][data-c="${wc}"]`).classList.add('win'));
+        setStatus(`${current===1?'🔴 Player 1':vsAI?'🤖 AI':'🟡 Player 2'} Wins! 🎉`);
+        scores[current]++;
+        document.getElementById('s1').textContent=scores[1];
+        document.getElementById('s2').textContent=scores[2];
+        gameOver=true; return;
+      }
+      if(board[0].every(v=>v)){setStatus("It's a Draw! 🤝");gameOver=true;return;}
+      current=current===1?2:1;
+      setStatus();
+      renderDrop();
+      if(vsAI&&current===2&&!gameOver) setTimeout(aiMove,400);
+      return;
+    }
+  }
+}
+
+function checkWin(r,c,p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){
+    let cells=[[r,c]];
+    for(let i=1;i<4;i++){const nr=r+dr*i,nc=c+dc*i;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&board[nr][nc]===p)cells.push([nr,nc]);else break;}
+    for(let i=1;i<4;i++){const nr=r-dr*i,nc=c-dc*i;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&board[nr][nc]===p)cells.push([nr,nc]);else break;}
+    if(cells.length>=4) return cells.slice(0,4);
+  }
+  return null;
+}
+
+function aiMove(){
+  // Score-based AI: try to win, block, or pick best column
+  const score=Array(COLS).fill(0);
+  for(let c=0;c<COLS;c++){
+    for(let r=ROWS-1;r>=0;r--){
+      if(!board[r][c]){
+        board[r][c]=2; if(checkWin(r,c,2)){board[r][c]=0;drop(c);return;} board[r][c]=0;
+        board[r][c]=1; if(checkWin(r,c,1)){score[c]+=100;} board[r][c]=0;
+        score[c]+=(c===3?8:c===2||c===4?5:c===1||c===5?3:1);
+        break;
+      }
+    }
+  }
+  const valid=score.map((s,c)=>({s,c})).filter(({c})=>!board[0][c]);
+  if(valid.length) drop(valid.reduce((a,b)=>a.s>=b.s?a:b).c);
+}
+
+function setStatus(msg){
+  if(!msg) msg=`${current===1?'🔴 Player 1':vsAI?'🤖 AI':'🟡 Player 2'}'s Turn`;
+  document.getElementById('status').textContent=msg;
+  document.getElementById('p1ind').classList.toggle('active',current===1);
+  document.getElementById('p2ind').classList.toggle('active',current===2);
+}
+
+document.getElementById('btn-new').addEventListener('click',newGame);
+document.getElementById('btn-mode').addEventListener('click',()=>{
+  vsAI=!vsAI;
+  document.getElementById('btn-mode').textContent=vsAI?'🤖 vs AI':'👥 2 Players';
+  document.getElementById('p2name').textContent=vsAI?'AI':'Player 2';
+  scores={1:0,2:0};
+  document.getElementById('s1').textContent=0;
+  document.getElementById('s2').textContent=0;
+  newGame();
+});
+
+newGame();
+</script>
+</body>
+</html>

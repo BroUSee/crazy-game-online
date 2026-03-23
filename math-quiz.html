@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Math Blaster — Crazy Game Online</title>
+  <meta name="description" content="Play Math Blaster! Answer math questions as fast as you can. Free brain game for kids and students."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .math-question { font-family:'Fredoka One',cursive;font-size:3.5rem;text-align:center;color:var(--text);margin:20px 0; }
+    .math-input { font-family:'Fredoka One',cursive;font-size:2rem;text-align:center;width:180px;padding:12px;background:var(--dark2);border:2px solid var(--card-border);border-radius:12px;color:var(--text);outline:none;transition:border-color 0.2s; }
+    .math-input:focus { border-color:var(--primary); }
+    .math-input.correct { border-color:var(--secondary);background:rgba(46,213,115,0.1); }
+    .math-input.wrong   { border-color:var(--primary);background:rgba(255,71,87,0.1); }
+    .timer-circle { position:relative;width:80px;height:80px;margin:0 auto; }
+    .timer-circle svg { transform:rotate(-90deg); }
+    .timer-track { fill:none;stroke:var(--card-border);stroke-width:6; }
+    .timer-fill  { fill:none;stroke:var(--primary);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 0.1s linear;stroke-dasharray:201;stroke-dashoffset:0; }
+    .timer-num { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--accent); }
+    .feedback { font-family:'Fredoka One',cursive;font-size:1.8rem;text-align:center;height:40px;transition:all 0.2s; }
+    .feedback.show-correct { color:var(--secondary); }
+    .feedback.show-wrong   { color:var(--primary); }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🧮 Math Blaster</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🧮 Math Blaster</h1>
+      <button class="btn btn-primary" id="btn-start">▶ Start</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Correct</span><span class="score-value" id="correct" style="color:var(--secondary)">0</span></div>
+      <div class="score-item"><span class="score-label">Wrong</span><span class="score-value" id="wrong" style="color:var(--primary)">0</span></div>
+      <div class="score-item" style="margin-left:auto;">
+        <div class="difficulty-btns">
+          <button class="diff-btn active" data-diff="easy">Easy</button>
+          <button class="diff-btn" data-diff="medium">Medium</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+      </div>
+    </div>
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:20px;" id="game-area">
+      <!-- Start overlay -->
+      <div id="start-screen" style="text-align:center;padding:40px 20px;">
+        <div style="font-size:4rem;margin-bottom:16px">🧮</div>
+        <h2 style="font-family:'Fredoka One',cursive;font-size:2rem;margin-bottom:12px">Math Blaster!</h2>
+        <p style="color:var(--text-muted);margin-bottom:24px">Answer math questions as fast as you can in 60 seconds!</p>
+        <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>Type your answer and press <span class="key-badge">Enter</span>. Answer as many as possible in 60 seconds!</p>
+    </div>
+    <div class="info-card">
+      <h3>📊 Scoring</h3>
+      <ul>
+        <li>✅ Correct: +10 pts</li>
+        <li>⚡ Fast answer: +5 bonus</li>
+        <li>❌ Wrong: -5 pts</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DIFF = {
+  easy:   ()=>generate(1,20,  ['+','-']),
+  medium: ()=>generate(1,50,  ['+','-','×']),
+  hard:   ()=>generate(1,100, ['+','-','×','÷']),
+};
+let diff='easy', score=0, correct=0, wrong=0, timeLeft=60, timerID, qTime, running=false;
+const LS = 'cgo_hs_math';
+const getHS = () => parseInt(localStorage.getItem(LS)||'0');
+const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+let curAnswer;
+
+function generate(min,max,ops){
+  const op = ops[Math.floor(Math.random()*ops.length)];
+  let a = Math.floor(Math.random()*(max-min)+min);
+  let b = Math.floor(Math.random()*(max-min)+min);
+  if(op==='÷'){
+    b = b||1;
+    a = a * b; // ensure integer result
+  }
+  if(op==='-' && b>a)[a,b]=[b,a];
+  const ans = op==='+'?a+b:op==='-'?a-b:op==='×'?a*b:a/b;
+  return { q:`${a} ${op} ${b} = ?`, ans };
+}
+
+function startGame(){
+  score=0;correct=0;wrong=0;timeLeft=60;running=true;
+  document.getElementById('btn-start').textContent='⏹ Stop';
+  timerID=setInterval(tick,1000);
+  nextQuestion();
+  updateUI();
+}
+
+function tick(){
+  timeLeft--;
+  const pct = timeLeft/60;
+  const offset = 201*(1-pct);
+  document.querySelector('.timer-fill').style.strokeDashoffset=offset;
+  document.querySelector('.timer-num').textContent=timeLeft;
+  if(timeLeft<=0) endGame();
+}
+
+function nextQuestion(){
+  const {q,ans} = DIFF[diff]();
+  curAnswer = ans;
+  qTime = Date.now();
+  document.getElementById('game-area').innerHTML = `
+    <div class="timer-circle">
+      <svg width="80" height="80" viewBox="0 0 72 72">
+        <circle class="timer-track" cx="36" cy="36" r="32"/>
+        <circle class="timer-fill" cx="36" cy="36" r="32"/>
+      </svg>
+      <div class="timer-num">${timeLeft}</div>
+    </div>
+    <div class="math-question">${q}</div>
+    <input id="math-input" class="math-input" type="number" autofocus placeholder="?"/>
+    <div class="feedback" id="feedback"></div>
+  `;
+  const inp = document.getElementById('math-input');
+  inp.focus();
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(inp); });
+  inp.addEventListener('input', ()=>{ if(diff!=='hard'&&inp.value.length>=String(curAnswer).length+1) checkAnswer(inp); });
+  const offset = 201*(1-(timeLeft/60));
+  document.querySelector('.timer-fill').style.strokeDashoffset=offset;
+}
+
+function checkAnswer(inp){
+  if(!running) return;
+  const val = parseInt(inp.value);
+  const fast = (Date.now()-qTime)<3000;
+  if(val===curAnswer){
+    inp.classList.add('correct');
+    score+= 10+(fast?5:0);
+    correct++;
+    showFeedback('✓ Correct!'+(fast?' ⚡':'')+' +'+( 10+(fast?5:0)),true);
+  } else {
+    inp.classList.add('wrong');
+    score=Math.max(0,score-5);
+    wrong++;
+    showFeedback(`✗ Answer was ${curAnswer}`,false);
+  }
+  updateUI();
+  setTimeout(nextQuestion, 700);
+}
+
+function showFeedback(msg, ok){
+  const f=document.getElementById('feedback');
+  if(!f) return;
+  f.textContent=msg;
+  f.className=`feedback show-${ok?'correct':'wrong'}`;
+  setTimeout(()=>f.className='feedback',600);
+}
+
+function endGame(){
+  running=false;
+  clearInterval(timerID);
+  setHS(score);
+  document.getElementById('btn-start').textContent='▶ Start';
+  document.getElementById('game-area').innerHTML=`
+    <div style="text-align:center;padding:32px 20px;animation:fadeIn 0.4s ease">
+      <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:2rem;margin-bottom:8px">Time's Up!</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:3.5rem;color:var(--accent)">${score}</div>
+      <p style="color:var(--text-muted);margin:8px 0">Correct: ${correct} · Wrong: ${wrong} · Best: ${getHS()}</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="startGame()">▶ Play Again</button>
+    </div>`;
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('correct').textContent=correct;
+  document.getElementById('wrong').textContent=wrong;
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+document.getElementById('btn-start').addEventListener('click',()=>{running?endGame():startGame();});
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-diff]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); diff=b.dataset.diff;
+}));
+document.getElementById('hs-p').textContent=getHS();
+</script>
+</body>
+</html>

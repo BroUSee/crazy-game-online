@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Trivia Quiz — Crazy Game Online</title>
+  <meta name="description" content="Play Trivia Quiz online! Test your general knowledge with hundreds of questions across many categories."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .quiz-card { max-width:560px;margin:0 auto;width:100%; }
+    .q-progress { background:var(--card-border);border-radius:4px;height:6px;margin-bottom:20px;overflow:hidden; }
+    .q-bar { height:100%;background:var(--primary);border-radius:4px;transition:width 0.4s ease; }
+    .q-text { font-family:'Fredoka One',cursive;font-size:1.4rem;line-height:1.4;margin-bottom:24px;min-height:80px; }
+    .q-options { display:flex;flex-direction:column;gap:10px; }
+    .q-opt { padding:14px 18px;border-radius:12px;border:2px solid var(--card-border);background:var(--dark2);cursor:pointer;font-weight:700;font-size:0.95rem;transition:all 0.2s;text-align:left; }
+    .q-opt:hover:not(:disabled) { border-color:var(--primary);background:rgba(255,71,87,0.08); }
+    .q-opt.correct { border-color:var(--secondary)!important;background:rgba(46,213,115,0.15)!important;color:var(--secondary); }
+    .q-opt.wrong   { border-color:var(--primary)!important;background:rgba(255,71,87,0.15)!important;color:var(--primary); }
+    .q-opt:disabled { cursor:default;opacity:0.7; }
+    .q-cat { display:inline-block;background:rgba(165,94,234,0.2);color:var(--purple);font-size:0.75rem;font-weight:800;padding:3px 12px;border-radius:50px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px; }
+    .result-card { text-align:center;padding:24px; }
+    .result-score { font-family:'Fredoka One',cursive;font-size:4rem;color:var(--accent); }
+    .stars { font-size:2rem;margin:8px 0; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🧠 Trivia Quiz</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🧠 Trivia Quiz</h1>
+      <button class="btn btn-primary" id="btn-new">🔄 New Quiz</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Question</span><span class="score-value" id="qnum">1/10</span></div>
+      <div class="score-item"><span class="score-label">Streak</span><span class="score-value" id="streak">0🔥</span></div>
+      <div class="score-item" style="margin-left:auto;">
+        <div class="difficulty-btns">
+          <button class="diff-btn active" data-diff="easy">Easy</button>
+          <button class="diff-btn" data-diff="medium">Medium</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+      </div>
+    </div>
+    <div class="game-canvas-wrap" style="align-items:flex-start;">
+      <div class="quiz-card" id="quiz-card"></div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>Select the correct answer from 4 choices. Faster correct answers earn bonus points!</p>
+    </div>
+    <div class="info-card">
+      <h3>📊 Scoring</h3>
+      <ul>
+        <li>✅ Correct: +100 pts</li>
+        <li>🔥 Streak bonus: +50 pts</li>
+        <li>❌ Wrong: -25 pts</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 High Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  // Science
+  {q:"What is the chemical symbol for water?",a:"H₂O",opts:["H₂O","HO₂","H₃O","H₂O₂"],cat:"Science",diff:"easy"},
+  {q:"How many planets are in our solar system?",a:"8",opts:["7","8","9","10"],cat:"Science",diff:"easy"},
+  {q:"What gas do plants absorb from the air?",a:"Carbon dioxide",opts:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],cat:"Science",diff:"easy"},
+  {q:"What is the speed of light approximately?",a:"300,000 km/s",opts:["150,000 km/s","300,000 km/s","450,000 km/s","600,000 km/s"],cat:"Science",diff:"medium"},
+  {q:"What is the atomic number of Carbon?",a:"6",opts:["4","6","8","12"],cat:"Science",diff:"medium"},
+  {q:"What planet is known as the Red Planet?",a:"Mars",opts:["Venus","Mars","Jupiter","Saturn"],cat:"Science",diff:"easy"},
+  {q:"What is DNA short for?",a:"Deoxyribonucleic acid",opts:["Deoxyribonucleic acid","Dynamic Nucleic Acid","Di-Nitrogen Acid","Dual Nucleic Atom"],cat:"Science",diff:"medium"},
+  {q:"How many bones are in an adult human body?",a:"206",opts:["186","206","226","246"],cat:"Science",diff:"medium"},
+  {q:"What is the powerhouse of the cell?",a:"Mitochondria",opts:["Nucleus","Ribosome","Mitochondria","Golgi body"],cat:"Science",diff:"easy"},
+  {q:"What force keeps planets in orbit?",a:"Gravity",opts:["Magnetism","Gravity","Friction","Centrifugal force"],cat:"Science",diff:"easy"},
+  // Geography
+  {q:"What is the capital of France?",a:"Paris",opts:["Lyon","Marseille","Paris","Nice"],cat:"Geography",diff:"easy"},
+  {q:"What is the largest country by area?",a:"Russia",opts:["China","USA","Canada","Russia"],cat:"Geography",diff:"easy"},
+  {q:"On which continent is the Sahara Desert?",a:"Africa",opts:["Asia","Australia","Africa","South America"],cat:"Geography",diff:"easy"},
+  {q:"What is the longest river in the world?",a:"Nile",opts:["Amazon","Yangtze","Nile","Mississippi"],cat:"Geography",diff:"medium"},
+  {q:"What is the capital of Australia?",a:"Canberra",opts:["Sydney","Melbourne","Brisbane","Canberra"],cat:"Geography",diff:"medium"},
+  {q:"How many continents are on Earth?",a:"7",opts:["5","6","7","8"],cat:"Geography",diff:"easy"},
+  {q:"What is the smallest country in the world?",a:"Vatican City",opts:["Monaco","San Marino","Vatican City","Liechtenstein"],cat:"Geography",diff:"medium"},
+  {q:"Which ocean is the largest?",a:"Pacific",opts:["Atlantic","Indian","Arctic","Pacific"],cat:"Geography",diff:"easy"},
+  // History
+  {q:"In what year did World War II end?",a:"1945",opts:["1943","1944","1945","1946"],cat:"History",diff:"easy"},
+  {q:"Who was the first person on the Moon?",a:"Neil Armstrong",opts:["Buzz Aldrin","Neil Armstrong","Yuri Gagarin","John Glenn"],cat:"History",diff:"easy"},
+  {q:"In what year did Christopher Columbus reach America?",a:"1492",opts:["1488","1492","1498","1503"],cat:"History",diff:"medium"},
+  {q:"Who invented the telephone?",a:"Alexander Graham Bell",opts:["Thomas Edison","Nikola Tesla","Alexander Graham Bell","Guglielmo Marconi"],cat:"History",diff:"easy"},
+  {q:"Which ancient wonder was in Alexandria?",a:"The Lighthouse",opts:["The Colossus","The Lighthouse","The Mausoleum","The Temple of Artemis"],cat:"History",diff:"hard"},
+  // Math
+  {q:"What is 15% of 200?",a:"30",opts:["20","25","30","35"],cat:"Math",diff:"easy"},
+  {q:"What is the square root of 144?",a:"12",opts:["11","12","13","14"],cat:"Math",diff:"easy"},
+  {q:"What is 7 × 8?",a:"56",opts:["48","54","56","64"],cat:"Math",diff:"easy"},
+  {q:"What is π rounded to 2 decimal places?",a:"3.14",opts:["3.12","3.13","3.14","3.16"],cat:"Math",diff:"easy"},
+  {q:"What is 2^10?",a:"1024",opts:["512","1000","1024","2048"],cat:"Math",diff:"medium"},
+  // Pop Culture & General
+  {q:"How many sides does a hexagon have?",a:"6",opts:["5","6","7","8"],cat:"General",diff:"easy"},
+  {q:"What colour are emeralds?",a:"Green",opts:["Blue","Red","Green","Yellow"],cat:"General",diff:"easy"},
+  {q:"How many strings does a standard guitar have?",a:"6",opts:["4","5","6","7"],cat:"General",diff:"easy"},
+  {q:"What sport is played at Wimbledon?",a:"Tennis",opts:["Cricket","Tennis","Golf","Polo"],cat:"General",diff:"easy"},
+  {q:"How many hours are in a week?",a:"168",opts:["144","156","168","180"],cat:"Math",diff:"medium"},
+  {q:"What is the hardest natural substance?",a:"Diamond",opts:["Ruby","Sapphire","Diamond","Quartz"],cat:"Science",diff:"easy"},
+  {q:"Which element has the symbol 'Au'?",a:"Gold",opts:["Silver","Aluminium","Gold","Argon"],cat:"Science",diff:"medium"},
+];
+
+let questions, qIdx, score, streak, diff, totalQ;
+const LS = 'cgo_hs_trivia';
+const getHS = () => parseInt(localStorage.getItem(LS)||'0');
+const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+
+diff   = 'easy';
+totalQ = 10;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function newGame(){
+  const pool = ALL_QUESTIONS.filter(q=> diff==='easy'?q.diff==='easy': diff==='medium'?q.diff!=='hard':true);
+  questions = shuffle([...pool]).slice(0,totalQ);
+  qIdx=0; score=0; streak=0;
+  updateUI();
+  showQuestion();
+}
+
+function showQuestion(){
+  const q = questions[qIdx];
+  const shuffledOpts = shuffle([...q.opts]);
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="q-progress"><div class="q-bar" style="width:${(qIdx/totalQ)*100}%"></div></div>
+    <div class="q-cat">${q.cat}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="q-options">
+      ${shuffledOpts.map((o,i)=>`<button class="q-opt" data-ans="${o}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+    </div>
+  `;
+  document.querySelectorAll('.q-opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  document.getElementById('qnum').textContent = `${qIdx+1}/${totalQ}`;
+}
+
+function answer(btn){
+  const chosen = btn.dataset.ans;
+  const correct = questions[qIdx].a;
+  document.querySelectorAll('.q-opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.ans===correct) b.classList.add('correct');
+    if(b===btn && chosen!==correct) b.classList.add('wrong');
+  });
+  if(chosen===correct){
+    score+=100+(streak>=2?50:0);
+    streak++;
+  } else {
+    score=Math.max(0,score-25);
+    streak=0;
+  }
+  updateUI();
+  setTimeout(()=>{ qIdx++; qIdx<totalQ?showQuestion():showResult(); },1200);
+}
+
+function showResult(){
+  setHS(score);
+  const pct=Math.round((score/(totalQ*100))*100);
+  const stars = pct>=80?'⭐⭐⭐':pct>=50?'⭐⭐':'⭐';
+  const msg   = pct>=80?'Excellent! 🎉':pct>=50?'Well Done! 👏':'Keep Practising! 💪';
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="result-card fadein">
+      <div style="font-size:3rem">🏆</div>
+      <div class="result-score">${score}</div>
+      <div class="stars">${stars}</div>
+      <h3 style="font-family:'Fredoka One',cursive;font-size:1.5rem;margin-bottom:8px">${msg}</h3>
+      <p style="color:var(--text-muted);margin-bottom:20px">${pct}% correct · Best: ${getHS()}</p>
+      <button class="btn btn-primary" onclick="newGame()">▶ Play Again</button>
+    </div>`;
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('streak').textContent=streak>0?`${streak}🔥`:'0';
+  document.getElementById('hs-p').textContent=getHS();
+}
+
+document.getElementById('btn-new').addEventListener('click',newGame);
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-diff]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); diff=b.dataset.diff; newGame();
+}));
+
+newGame();
+</script>
+</body>
+</html>

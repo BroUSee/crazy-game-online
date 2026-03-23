@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Flappy Bird — Crazy Game Online</title>
+  <meta name="description" content="Play Flappy Bird online! Tap to fly through pipes. Free arcade game, no download needed."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐦</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+</head>
+<body>
+
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🐦 Flappy Bird</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🐦 Flappy Bird</h1>
+      <button class="btn btn-primary" id="btn-restart">🔄 Restart</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">0</span></div>
+    </div>
+    <div class="game-canvas-wrap">
+      <canvas id="game-canvas" width="360" height="480" style="border:2px solid var(--card-border);border-radius:12px;cursor:pointer;"></canvas>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 Controls</h3>
+      <ul>
+        <li><span class="key-badge">Space</span> Flap wings</li>
+        <li><span class="key-badge">Click/Tap</span> Also flap</li>
+        <li><span class="key-badge">R</span> Restart</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>📋 Rules</h3>
+      <p>Fly between the green pipes without touching them. Each pipe you pass = +1 score. Don't hit the ground!</p>
+    </div>
+    <div class="info-card">
+      <h3>🏆 Best Score</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-p">0</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const LS = 'cgo_hs_flappy';
+const getHS = () => parseInt(localStorage.getItem(LS)||'0');
+const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
+
+const GRAVITY = 0.35, FLAP = -7, PIPE_W = 52, GAP = 130, PIPE_SPEED = 2.2;
+
+let bird, pipes, score, state, frames;
+
+function reset() {
+  bird  = { x:80, y:H/2, vy:0, r:16 };
+  pipes = [];
+  score = 0; frames = 0;
+  state = 'idle'; // idle | playing | dead
+  render();
+}
+
+function flap() {
+  if (state==='dead') { reset(); return; }
+  if (state==='idle') state = 'playing';
+  bird.vy = FLAP;
+}
+
+function addPipe() {
+  const top = 60 + Math.random()*(H - GAP - 120);
+  pipes.push({ x: W+10, top, passed: false });
+}
+
+function update() {
+  if (state !== 'playing') return;
+  frames++;
+  if (frames % 80 === 0) addPipe();
+
+  bird.vy += GRAVITY;
+  bird.y  += bird.vy;
+
+  if (bird.y + bird.r > H - 40 || bird.y - bird.r < 0) { die(); return; }
+
+  pipes.forEach(p => {
+    p.x -= PIPE_SPEED;
+    if (!p.passed && p.x + PIPE_W < bird.x) { p.passed=true; score++; }
+    if (
+      bird.x + bird.r > p.x && bird.x - bird.r < p.x + PIPE_W &&
+      (bird.y - bird.r < p.top || bird.y + bird.r > p.top + GAP)
+    ) die();
+  });
+  pipes = pipes.filter(p => p.x > -PIPE_W - 10);
+}
+
+function die() {
+  state = 'dead';
+  setHS(score);
+  document.getElementById('best').textContent = getHS();
+  document.getElementById('hs-p').textContent = getHS();
+}
+
+function render() {
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#1a1a2e'); sky.addColorStop(1,'#16213e');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  // Stars
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  [[40,30],[80,80],[200,20],[300,60],[150,130]].forEach(([x,y])=>{
+    ctx.beginPath(); ctx.arc(x,y,1.5,0,Math.PI*2); ctx.fill();
+  });
+
+  // Ground
+  ctx.fillStyle='#2d5016';
+  ctx.fillRect(0,H-40,W,40);
+  ctx.fillStyle='#3a6b1e';
+  ctx.fillRect(0,H-40,W,8);
+
+  // Pipes
+  pipes.forEach(p => {
+    // Top pipe
+    ctx.fillStyle='#2ed573';
+    ctx.fillRect(p.x, 0, PIPE_W, p.top);
+    ctx.fillStyle='#27ae60';
+    ctx.fillRect(p.x-4, p.top-20, PIPE_W+8, 20);
+    // Bottom pipe
+    const bot = p.top + GAP;
+    ctx.fillStyle='#2ed573';
+    ctx.fillRect(p.x, bot, PIPE_W, H-bot-40);
+    ctx.fillStyle='#27ae60';
+    ctx.fillRect(p.x-4, bot, PIPE_W+8, 20);
+  });
+
+  // Bird
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  ctx.rotate(Math.min(Math.max(bird.vy*0.05, -0.5), 1.2));
+  ctx.font = '32px serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🐦', 0, 0);
+  ctx.restore();
+
+  // Score
+  ctx.fillStyle='white';
+  ctx.font = "bold 32px 'Fredoka One', cursive";
+  ctx.textAlign='center';
+  ctx.fillText(score, W/2, 50);
+
+  // Overlay
+  if (state==='idle') {
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='white';
+    ctx.font="bold 36px 'Fredoka One',cursive";
+    ctx.fillText('🐦 Flappy Bird',W/2,H/2-60);
+    ctx.font='18px Nunito,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.fillText('Tap or press Space to start',W/2,H/2);
+  }
+
+  if (state==='dead') {
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='white';
+    ctx.font="bold 40px 'Fredoka One',cursive";
+    ctx.fillText('Game Over!',W/2,H/2-60);
+    ctx.font='24px Nunito,sans-serif';
+    ctx.fillStyle='#ffa502';
+    ctx.fillText(`Score: ${score}`,W/2,H/2-20);
+    ctx.fillStyle='#2ed573';
+    ctx.fillText(`Best: ${getHS()}`,W/2,H/2+20);
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.font='16px Nunito,sans-serif';
+    ctx.fillText('Tap to play again',W/2,H/2+65);
+  }
+
+  document.getElementById('score').textContent = score;
+}
+
+function loop() {
+  update(); render();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('click', flap);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, {passive:false});
+document.addEventListener('keydown', e => {
+  if (e.key===' ' || e.key==='ArrowUp') { e.preventDefault(); flap(); }
+  if (e.key.toLowerCase()==='r') reset();
+});
+document.getElementById('btn-restart').addEventListener('click', reset);
+
+reset();
+loop();
+</script>
+</body>
+</html>

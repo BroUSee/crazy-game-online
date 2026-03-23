@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Pong — Crazy Game Online</title>
+  <meta name="description" content="Play Pong online! Classic 2-player arcade game. First to 7 wins!"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🏓 Pong</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🏓 Pong</h1>
+      <div class="game-controls-bar">
+        <button class="btn btn-secondary" id="btn-mode">🤖 vs AI</button>
+        <button class="btn btn-primary" id="btn-start">▶ Start</button>
+      </div>
+    </div>
+
+    <div class="player-indicators">
+      <div class="player-ind active" id="p1ind">
+        <div class="player-dot p1-dot"></div>
+        <span class="player-name">Player 1</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--text-muted);margin:0 auto;">vs</div>
+      <div class="player-ind" id="p2ind">
+        <div class="player-dot p2-dot"></div>
+        <span class="player-name" id="p2name">AI</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap">
+      <canvas id="game-canvas" width="480" height="320" style="border:2px solid var(--card-border);border-radius:12px;cursor:none;"></canvas>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px;border-top:1px solid var(--card-border);">
+      <div style="text-align:center;font-size:0.8rem;color:var(--text-muted);">
+        <strong style="color:var(--primary);">P1</strong> — W/S keys
+      </div>
+      <div style="text-align:center;font-size:0.8rem;color:var(--text-muted);">
+        <strong style="color:var(--blue);">P2</strong> — ↑/↓ keys
+      </div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 Controls</h3>
+      <ul>
+        <li><span class="key-badge">W / S</span> Player 1 paddle</li>
+        <li><span class="key-badge">↑ / ↓</span> Player 2 paddle</li>
+        <li><span class="key-badge">Space</span> Start / Pause</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>📋 Rules</h3>
+      <p>First to score <strong>7 points</strong> wins! The ball speeds up on each hit.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const WIN_SCORE = 7;
+const PAD_H = 70, PAD_W = 12, PAD_SPEED = 6;
+
+let p1, p2, ball, s1, s2, state, vsAI, keys;
+
+function init() {
+  p1  = { x:16,   y:H/2-PAD_H/2, score:0 };
+  p2  = { x:W-28, y:H/2-PAD_H/2, score:0 };
+  s1 = s2 = 0;
+  keys = {};
+  resetBall();
+  state = 'idle';
+  vsAI  = true;
+  updateUI();
+}
+
+function resetBall() {
+  ball = {
+    x: W/2, y: H/2,
+    vx: (Math.random()>0.5?1:-1)*4,
+    vy: (Math.random()*4-2),
+    r:  8
+  };
+}
+
+function update() {
+  if (state !== 'playing') return;
+
+  // Paddle movement
+  if (keys['w']||keys['W']) p1.y = Math.max(0, p1.y-PAD_SPEED);
+  if (keys['s']||keys['S']) p1.y = Math.min(H-PAD_H, p1.y+PAD_SPEED);
+
+  if (!vsAI) {
+    if (keys['ArrowUp'])   p2.y = Math.max(0, p2.y-PAD_SPEED);
+    if (keys['ArrowDown']) p2.y = Math.min(H-PAD_H, p2.y+PAD_SPEED);
+  } else {
+    // AI
+    const center = p2.y + PAD_H/2;
+    if (center < ball.y-5) p2.y = Math.min(H-PAD_H, p2.y+5);
+    if (center > ball.y+5) p2.y = Math.max(0, p2.y-5);
+  }
+
+  ball.x += ball.vx; ball.y += ball.vy;
+
+  // Top/bottom
+  if (ball.y-ball.r < 0)     { ball.y=ball.r;   ball.vy=Math.abs(ball.vy); }
+  if (ball.y+ball.r > H)     { ball.y=H-ball.r; ball.vy=-Math.abs(ball.vy); }
+
+  // Paddle collisions
+  if (ball.x-ball.r < p1.x+PAD_W && ball.y>p1.y && ball.y<p1.y+PAD_H && ball.vx<0) {
+    ball.vx = Math.min(Math.abs(ball.vx)*1.05, 14);
+    const hit = (ball.y-(p1.y+PAD_H/2))/(PAD_H/2);
+    ball.vy = hit*6;
+    ball.x  = p1.x+PAD_W+ball.r;
+  }
+  if (ball.x+ball.r > p2.x && ball.y>p2.y && ball.y<p2.y+PAD_H && ball.vx>0) {
+    ball.vx = -Math.min(Math.abs(ball.vx)*1.05, 14);
+    const hit = (ball.y-(p2.y+PAD_H/2))/(PAD_H/2);
+    ball.vy = hit*6;
+    ball.x  = p2.x-ball.r;
+  }
+
+  // Scoring
+  if (ball.x < 0) { s2++; checkWin(); resetBall(); state='idle'; setTimeout(()=>state='playing',800); }
+  if (ball.x > W) { s1++; checkWin(); resetBall(); state='idle'; setTimeout(()=>state='playing',800); }
+
+  updateUI();
+}
+
+function checkWin() {
+  updateUI();
+  if (s1 >= WIN_SCORE || s2 >= WIN_SCORE) {
+    state = 'won';
+    const msg = s1>=WIN_SCORE ? '🎉 Player 1 Wins!' : vsAI ? '🤖 AI Wins!' : '🎉 Player 2 Wins!';
+    setTimeout(()=>alert(msg+`\nPlay again?`), 100);
+  }
+}
+
+function updateUI() {
+  document.getElementById('s1').textContent = s1;
+  document.getElementById('s2').textContent = s2;
+}
+
+function draw() {
+  ctx.fillStyle='#0f0e17'; ctx.fillRect(0,0,W,H);
+
+  // Center dashes
+  ctx.setLineDash([8,8]);
+  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Paddles
+  ctx.fillStyle='#ff4757';
+  roundRect(ctx,p1.x,p1.y,PAD_W,PAD_H,PAD_W/2); ctx.fill();
+  ctx.fillStyle='#1e90ff';
+  roundRect(ctx,p2.x,p2.y,PAD_W,PAD_H,PAD_W/2); ctx.fill();
+
+  // Ball
+  ctx.fillStyle='white';
+  ctx.shadowColor='rgba(255,255,255,0.5)'; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+
+  if (state==='idle') {
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.font="16px 'Fredoka One',cursive"; ctx.textAlign='center';
+    ctx.fillText('Press Space to serve',W/2,H-16);
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+
+document.addEventListener('keydown', e=>{
+  keys[e.key]=true;
+  if(e.key===' '){e.preventDefault();if(state==='idle'||state==='won'){if(state==='won'){s1=0;s2=0;init();}state='playing';}}
+});
+document.addEventListener('keyup', e=>{ keys[e.key]=false; });
+
+document.getElementById('btn-start').addEventListener('click',()=>{
+  if(state==='won'){s1=0;s2=0;init();}
+  state='playing';
+});
+document.getElementById('btn-mode').addEventListener('click',()=>{
+  vsAI=!vsAI;
+  document.getElementById('btn-mode').textContent = vsAI?'🤖 vs AI':'👥 2 Players';
+  document.getElementById('p2name').textContent   = vsAI?'AI':'Player 2';
+  s1=0;s2=0; init();
+});
+
+init(); loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Number Guess — Crazy Game Online</title>
+  <meta name="description" content="Play Number Guess! Guess the secret number with hot and cold hints. Free puzzle game."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .guess-input-row { display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap; }
+    .guess-input { font-family:'Fredoka One',cursive;font-size:2rem;width:140px;text-align:center;padding:12px;background:var(--dark2);border:2px solid var(--card-border);border-radius:12px;color:var(--text);outline:none; }
+    .guess-input:focus { border-color:var(--primary); }
+    .history-list { list-style:none;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;padding-right:4px; }
+    .history-item { display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;font-weight:700; }
+    .hi-num   { font-family:'Fredoka One',cursive;font-size:1.3rem;width:48px;text-align:center; }
+    .hi-bar   { flex:1;height:8px;border-radius:4px;background:var(--card-border); }
+    .hi-fill  { height:100%;border-radius:4px; }
+    .hi-hint  { font-size:1.4rem; }
+    .thermometer { font-size:3rem;transition:all 0.4s; }
+    .range-display { font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--text-muted);text-align:center; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">🎯 Number Guess</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">🎯 Number Guess</h1>
+      <button class="btn btn-primary" id="btn-new">🔄 New Game</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Guesses</span><span class="score-value" id="guesses">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-value" id="best">-</span></div>
+      <div class="score-item" style="margin-left:auto;">
+        <div class="difficulty-btns">
+          <button class="diff-btn active" data-max="100">1–100</button>
+          <button class="diff-btn" data-max="500">1–500</button>
+          <button class="diff-btn" data-max="1000">1–1000</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:20px;">
+      <div style="text-align:center;">
+        <div class="thermometer" id="thermo">🌡️</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--accent);margin-top:6px;" id="hint-msg">Guess a number to start!</div>
+      </div>
+
+      <div class="range-display" id="range-display">Range: <strong>1 — 100</strong></div>
+
+      <div class="guess-input-row">
+        <input type="number" class="guess-input" id="guess-input" placeholder="?" min="1" max="100"/>
+        <button class="btn btn-primary" id="btn-guess">Guess →</button>
+      </div>
+
+      <div style="max-height:280px;overflow-y:auto;">
+        <ul class="history-list" id="history"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 How to Play</h3>
+      <p>A secret number is hidden. Type your guess and press Guess. The thermometer tells you how close you are!</p>
+    </div>
+    <div class="info-card">
+      <h3>🌡️ Temperature Guide</h3>
+      <ul>
+        <li>🔥🔥🔥 Blazing hot! (±5)</li>
+        <li>🔥🔥 Very warm (±15)</li>
+        <li>🔥 Warm (±30)</li>
+        <li>❄️ Cold (±60)</li>
+        <li>🧊 Freezing (far away)</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🏆 Fewest Guesses</h3>
+      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-p">-</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let secret, guessCount, maxNum, lo, hi, won;
+const LS_KEY = (m) => `cgo_hs_guess_${m}`;
+const getHS = () => { const v=localStorage.getItem(LS_KEY(maxNum)); return v?parseInt(v):null; };
+const setHS = v => { const c=getHS(); if(c===null||v<c) localStorage.setItem(LS_KEY(maxNum),v); };
+
+maxNum = 100;
+
+function newGame() {
+  secret     = Math.floor(Math.random() * maxNum) + 1;
+  guessCount = 0;
+  lo = 1; hi = maxNum; won = false;
+  document.getElementById('history').innerHTML = '';
+  document.getElementById('guesses').textContent = 0;
+  document.getElementById('thermo').textContent  = '🌡️';
+  document.getElementById('hint-msg').textContent = `Guess a number between 1 and ${maxNum}!`;
+  document.getElementById('hint-msg').style.color = 'var(--accent)';
+  document.getElementById('guess-input').value = '';
+  document.getElementById('guess-input').max   = maxNum;
+  document.getElementById('range-display').innerHTML = `Range: <strong>${lo} — ${hi}</strong>`;
+  updateHS();
+}
+
+function makeGuess() {
+  if (won) return;
+  const val = parseInt(document.getElementById('guess-input').value);
+  if (!val || val < 1 || val > maxNum) {
+    document.getElementById('hint-msg').textContent = `Enter a number between 1 and ${maxNum}!`;
+    return;
+  }
+  guessCount++;
+  document.getElementById('guesses').textContent = guessCount;
+  document.getElementById('guess-input').value = '';
+
+  const diff  = Math.abs(val - secret);
+  const pct   = 1 - diff / maxNum;
+  let thermo, hint, hintColor;
+
+  if (val === secret) {
+    thermo = '🎯'; hint = `🎉 CORRECT! It was ${secret}! You got it in ${guessCount} guess${guessCount!==1?'es':''}!`;
+    hintColor = 'var(--secondary)';
+    won = true;
+    setHS(guessCount); updateHS();
+  } else {
+    if      (diff <= 5)  { thermo = '🔥🔥🔥'; hint = `${val < secret ? '⬆️ Higher' : '⬇️ Lower'} — BLAZING HOT! 🔥`; hintColor='#ff4757'; }
+    else if (diff <= 15) { thermo = '🔥🔥';   hint = `${val < secret ? '⬆️ Higher' : '⬇️ Lower'} — Very warm!`;      hintColor='#ff6b35'; }
+    else if (diff <= 30) { thermo = '🔥';     hint = `${val < secret ? '⬆️ Higher' : '⬇️ Lower'} — Getting warm`;    hintColor='#ffa502'; }
+    else if (diff <= 60) { thermo = '❄️';     hint = `${val < secret ? '⬆️ Higher' : '⬇️ Lower'} — Cold!`;           hintColor='#70a1ff'; }
+    else                 { thermo = '🧊';     hint = `${val < secret ? '⬆️ Higher' : '⬇️ Lower'} — Freezing cold!`;  hintColor='#1e90ff'; }
+
+    if (val < secret) lo = Math.max(lo, val+1);
+    else              hi = Math.min(hi, val-1);
+    document.getElementById('range-display').innerHTML = `Range: <strong>${lo} — ${hi}</strong>`;
+  }
+
+  document.getElementById('thermo').textContent    = thermo;
+  document.getElementById('hint-msg').textContent  = hint;
+  document.getElementById('hint-msg').style.color  = hintColor;
+
+  // Add to history
+  const li = document.createElement('li');
+  li.className = 'history-item';
+  li.style.background = won ? 'rgba(46,213,115,0.1)' : 'var(--dark2)';
+  li.innerHTML = `
+    <span class="hi-num" style="color:${hintColor}">${val}</span>
+    <div class="hi-bar"><div class="hi-fill" style="width:${Math.round(pct*100)}%;background:${hintColor}"></div></div>
+    <span class="hi-hint">${thermo.split('').slice(-1)[0]||thermo}</span>
+  `;
+  const hist = document.getElementById('history');
+  hist.insertBefore(li, hist.firstChild);
+}
+
+function updateHS() {
+  const hs = getHS();
+  document.getElementById('best').textContent = hs !== null ? hs : '-';
+  document.getElementById('hs-p').textContent = hs !== null ? hs + ' guesses' : '-';
+}
+
+document.getElementById('btn-guess').addEventListener('click', makeGuess);
+document.getElementById('guess-input').addEventListener('keydown', e => { if(e.key==='Enter') makeGuess(); });
+document.getElementById('btn-new').addEventListener('click', newGame);
+
+document.querySelectorAll('[data-max]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-max]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  maxNum = parseInt(b.dataset.max);
+  newGame();
+}));
+
+newGame();
+</script>
+</body>
+</html>

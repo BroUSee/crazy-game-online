@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Tic-Tac-Toe — Crazy Game Online</title>
+  <meta name="description" content="Play Tic-Tac-Toe online! Challenge the AI or play with a friend. Free classic game."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❌</text></svg>"/>
+  <link rel="stylesheet" href="../css/game.css"/>
+  <style>
+    .ttt-board { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto; }
+    .ttt-cell { aspect-ratio:1;background:var(--dark2);border-radius:12px;border:2px solid var(--card-border);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:3rem;cursor:pointer;transition:all 0.2s; }
+    .ttt-cell:hover:not(.taken) { border-color:var(--primary);background:rgba(255,71,87,0.1); }
+    .ttt-cell.X { color:var(--primary); }
+    .ttt-cell.O { color:var(--blue); }
+    .ttt-cell.win { background:rgba(46,213,115,0.2);border-color:var(--secondary);animation:pop 0.3s ease; }
+    .scoreboard { display:flex;gap:12px;justify-content:center; }
+    .sc { background:var(--dark2);border-radius:12px;padding:10px 24px;text-align:center; }
+    .sc-name { font-size:0.78rem;color:var(--text-muted);font-weight:700;text-transform:uppercase; }
+    .sc-val  { font-family:'Fredoka One',cursive;font-size:1.8rem; }
+  </style>
+</head>
+<body>
+<nav class="game-nav">
+  <div class="game-nav-inner">
+    <a href="../index.html" class="back-btn">← Back</a>
+    <span class="game-nav-title">❌ Tic-Tac-Toe</span>
+    <a href="../index.html" class="game-nav-logo">🎮 CGO</a>
+  </div>
+</nav>
+
+<div class="game-wrapper">
+  <div class="game-stage">
+    <div class="game-header">
+      <h1 class="game-title">❌ Tic-Tac-Toe</h1>
+      <div class="game-controls-bar">
+        <button class="btn btn-secondary" id="btn-mode">🤖 vs AI</button>
+        <button class="btn btn-primary" id="btn-new">🔄 New</button>
+      </div>
+    </div>
+    <div class="score-bar" style="justify-content:center;">
+      <div class="scoreboard">
+        <div class="sc"><div class="sc-name" id="p1n">Player X</div><div class="sc-val" id="s1" style="color:var(--primary)">0</div></div>
+        <div class="sc"><div class="sc-name">Draws</div><div class="sc-val" id="sd" style="color:var(--text-muted)">0</div></div>
+        <div class="sc"><div class="sc-name" id="p2n">AI O</div><div class="sc-val" id="s2" style="color:var(--blue)">0</div></div>
+      </div>
+    </div>
+    <div class="game-canvas-wrap" style="flex-direction:column;gap:20px;">
+      <div id="status" style="font-family:'Fredoka One',cursive;font-size:1.3rem;text-align:center;color:var(--accent);">X's Turn</div>
+      <div class="ttt-board" id="board"></div>
+    </div>
+  </div>
+
+  <div class="game-info-panel">
+    <div class="info-card">
+      <h3>🎮 Modes</h3>
+      <p>Click <strong>vs AI</strong> to play against the computer, or <strong>vs Friend</strong> to play 2-player on the same device!</p>
+    </div>
+    <div class="info-card">
+      <h3>📋 Rules</h3>
+      <p>Get 3 of your symbols in a row (horizontal, vertical or diagonal) to win!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let board, current, scores, vsAI, aiThinking;
+scores = {X:0, O:0, D:0};
+vsAI   = true;
+
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function newGame() {
+  board  = Array(9).fill('');
+  current= 'X';
+  aiThinking = false;
+  renderBoard();
+  setStatus(`${current}'s Turn`);
+}
+
+function renderBoard() {
+  const el = document.getElementById('board');
+  el.innerHTML = board.map((v,i)=>`
+    <div class="ttt-cell${v?' taken':''} ${v}" data-i="${i}">${v}</div>
+  `).join('');
+  el.querySelectorAll('.ttt-cell').forEach(c=>c.addEventListener('click',onCell));
+}
+
+function onCell(e) {
+  const i = parseInt(e.currentTarget.dataset.i);
+  if (board[i] || aiThinking) return;
+  makeMove(i);
+}
+
+function makeMove(i) {
+  board[i] = current;
+  const won = checkWin(current);
+  renderBoard();
+  if (won) {
+    won.forEach(i=>document.querySelectorAll('.ttt-cell')[i].classList.add('win'));
+    setStatus(`${current==='X'?'🎉 Player X':'🎉 '+(vsAI?'AI':'Player O')} Wins!`);
+    scores[current]++; updateScores();
+    return;
+  }
+  if (board.every(v=>v)) {
+    setStatus("It's a Draw! 🤝"); scores.D++; updateScores(); return;
+  }
+  current = current==='X'?'O':'X';
+  setStatus(`${current==='X'?'Player X':vsAI?'AI O':'Player O'}'s Turn`);
+  if (vsAI && current==='O') { aiThinking=true; setTimeout(aiMove,500); }
+}
+
+function checkWin(p) {
+  return WINS.find(w=>w.every(i=>board[i]===p)) || null;
+}
+
+function aiMove() {
+  aiThinking=false;
+  // Minimax AI
+  let best=-Infinity, move=4; // prefer center
+  if (!board[4]) { makeMove(4); return; }
+  for(let i=0;i<9;i++){
+    if(!board[i]){
+      board[i]='O';
+      const s=minimax(board,0,false);
+      board[i]='';
+      if(s>best){best=s;move=i;}
+    }
+  }
+  makeMove(move);
+}
+
+function minimax(b,depth,isMax) {
+  if(checkWin('O')) return 10-depth;
+  if(checkWin('X')) return depth-10;
+  if(b.every(v=>v)) return 0;
+  if(isMax){
+    let best=-Infinity;
+    for(let i=0;i<9;i++){if(!b[i]){b[i]='O';best=Math.max(best,minimax(b,depth+1,false));b[i]='';}}
+    return best;
+  } else {
+    let best=Infinity;
+    for(let i=0;i<9;i++){if(!b[i]){b[i]='X';best=Math.min(best,minimax(b,depth+1,true));b[i]='';}}
+    return best;
+  }
+}
+
+function setStatus(msg) { document.getElementById('status').textContent=msg; }
+function updateScores() {
+  document.getElementById('s1').textContent=scores.X;
+  document.getElementById('s2').textContent=scores.O;
+  document.getElementById('sd').textContent=scores.D;
+}
+
+document.getElementById('btn-new').addEventListener('click',newGame);
+document.getElementById('btn-mode').addEventListener('click',()=>{
+  vsAI=!vsAI;
+  document.getElementById('btn-mode').textContent = vsAI?'🤖 vs AI':'👥 vs Friend';
+  document.getElementById('p2n').textContent = vsAI?'AI O':'Player O';
+  scores={X:0,O:0,D:0}; updateScores(); newGame();
+});
+
+newGame();
+</script>
+</body>
+</html>
