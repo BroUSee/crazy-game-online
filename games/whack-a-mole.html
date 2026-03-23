@@ -4,18 +4,108 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Whack-A-Mole — Crazy Game Online</title>
-  <meta name="description" content="Play Whack-A-Mole online! Hit the moles as fast as they appear. Fun action game for kids."/>
+  <meta name="description" content="Play Whack-A-Mole online! Hit the moles as fast as they appear. Free action game."/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔨</text></svg>"/>
   <link rel="stylesheet" href="../css/game.css"/>
   <style>
-    .wam-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px;max-width:420px;margin:0 auto; }
-    .hole { aspect-ratio:1;background:var(--dark2);border-radius:50%;border:3px solid var(--card-border);display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;position:relative;overflow:hidden;transition:transform 0.1s;user-select:none; }
-    .hole:active { transform:scale(0.93); }
-    .mole { position:absolute;bottom:-100%;transition:bottom 0.2s ease;font-size:2.5rem;line-height:1;pointer-events:none; }
-    .hole.up .mole { bottom:0; }
-    .hole.whacked .mole { bottom:-100%;transition:bottom 0.1s; }
-    .hole.whacked::after { content:'💥';position:absolute;font-size:2.5rem;animation:pop 0.3s ease forwards; }
-    .timer-bar { height:6px;background:var(--primary);border-radius:3px;transition:width 0.1s linear; }
+    /* ── WAM SPECIFIC ── */
+    .wam-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding: 24px;
+      max-width: 460px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hole-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* The mole container — clips the mole sliding up */
+    .mole-container {
+      width: 100%;
+      aspect-ratio: 1;
+      position: relative;
+      overflow: hidden;
+      border-radius: 50% 50% 8px 8px;
+      background: linear-gradient(180deg, #6b3a1f 0%, #4a2810 100%);
+      border: 3px solid #3a1f08;
+      box-shadow: inset 0 8px 20px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Dark inside of hole */
+    .mole-container::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; right: 10%;
+      height: 55%;
+      background: radial-gradient(ellipse at 50% 100%, #1a0a00 0%, #2d1505 60%, transparent 100%);
+      border-radius: 50% 50% 0 0;
+      z-index: 1;
+    }
+
+    /* Grass rim on top */
+    .hole-grass {
+      width: 110%;
+      height: 18px;
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+      border-radius: 50%;
+      border: 2px solid #15803d;
+      margin-top: -9px;
+      position: relative;
+      z-index: 4;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    }
+
+    /* The mole emoji */
+    .mole {
+      position: absolute;
+      bottom: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2.6rem;
+      line-height: 1;
+      z-index: 3;
+      transition: bottom 0.18s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: none;
+      filter: drop-shadow(0 -2px 4px rgba(0,0,0,0.3));
+    }
+
+    .hole-wrap.up .mole   { bottom: 5%; }
+    .hole-wrap.whacked .mole { bottom: -100%; transition: bottom 0.08s ease-in; }
+
+    /* Whack flash */
+    .hole-wrap.whacked .mole-container {
+      animation: whackFlash 0.2s ease;
+    }
+
+    @keyframes whackFlash {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(0.9); background: #ff4444; }
+      100% { transform: scale(1); }
+    }
+
+    /* Timer bar */
+    .timer-bar {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 16px 8px;
+    }
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #6c63ff);
+      border-radius: 4px;
+      transition: width 0.1s linear;
+    }
   </style>
 </head>
 <body>
@@ -34,11 +124,21 @@
       <h1 class="game-title">🔨 Whack-A-Mole</h1>
       <button class="btn btn-primary" id="btn-start">▶ Start</button>
     </div>
+
     <div class="score-bar">
-      <div class="score-item"><span class="score-label">Score</span><span class="score-value" id="score">0</span></div>
-      <div class="score-item"><span class="score-label">Missed</span><span class="score-value" id="missed" style="color:var(--primary)">0</span></div>
-      <div class="score-item"><span class="score-label">Time</span><span class="score-value" id="timer">30</span></div>
-      <div class="score-item" style="margin-left:auto;">
+      <div class="score-item">
+        <span class="score-label">Score</span>
+        <span class="score-value" id="score">0</span>
+      </div>
+      <div class="score-item">
+        <span class="score-label">Missed</span>
+        <span class="score-value" id="missed" style="color:var(--red)">0</span>
+      </div>
+      <div class="score-item">
+        <span class="score-label">Time</span>
+        <span class="score-value" id="timer">30</span>
+      </div>
+      <div class="score-item">
         <div class="difficulty-btns">
           <button class="diff-btn active" data-diff="easy">Easy</button>
           <button class="diff-btn" data-diff="medium">Medium</button>
@@ -46,19 +146,24 @@
         </div>
       </div>
     </div>
-    <div style="padding:0 16px;"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
-    <div class="game-canvas-wrap">
+
+    <div class="timer-bar">
+      <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+    </div>
+
+    <div class="game-canvas-wrap" style="flex-direction:column; background: linear-gradient(180deg,#bbf7d0,#86efac);">
+      <!-- Start overlay -->
+      <div class="game-overlay" id="overlay" style="background:rgba(240,242,255,0.92);">
+        <div class="overlay-icon">🔨</div>
+        <div class="overlay-title">Whack-A-Mole!</div>
+        <div class="overlay-sub">Moles will pop up from the holes.<br/>Click them before they hide!</div>
+        <div class="overlay-btns">
+          <button class="btn btn-primary" id="overlay-start">▶ Play Now</button>
+        </div>
+      </div>
+
       <div class="wam-grid" id="wam-grid">
-        <!-- 9 holes -->
-        <div class="hole" data-i="0"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="1"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="2"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="3"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="4"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="5"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="6"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="7"><div class="mole">🐭</div></div>
-        <div class="hole" data-i="8"><div class="mole">🐭</div></div>
+        <!-- 9 holes rendered by JS -->
       </div>
     </div>
   </div>
@@ -66,117 +171,140 @@
   <div class="game-info-panel">
     <div class="info-card">
       <h3>🎮 How to Play</h3>
-      <p>Click the moles when they pop up! Each hit scores a point. Miss and you lose a point!</p>
+      <p>Moles pop out of the holes — click them fast to score! Don't miss or you lose points.</p>
     </div>
     <div class="info-card">
-      <h3>🐭 Mole Types</h3>
+      <h3>🐭 Types</h3>
       <ul>
-        <li><span>🐭</span> Normal mole (+1)</li>
-        <li><span>💎</span> Golden mole (+3)</li>
-        <li><span>💣</span> Bomb — DON'T hit! (-2)</li>
+        <li><span>🐭</span> Normal (+1 pt)</li>
+        <li><span>💎</span> Golden (+3 pts)</li>
+        <li><span>💣</span> Bomb — don't hit! (-2 pts)</li>
       </ul>
     </div>
     <div class="info-card">
       <h3>🏆 High Score</h3>
-      <p style="font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);text-align:center;" id="hs-display">0</p>
+      <p style="font-family:'Sora',sans-serif;font-size:2rem;color:var(--primary);text-align:center;" id="hs-display">0</p>
     </div>
   </div>
 </div>
 
 <script>
 const DIFF = {
-  easy:   { minTime:900, maxTime:1400, gameTime:30 },
-  medium: { minTime:600, maxTime:1000, gameTime:30 },
-  hard:   { minTime:400, maxTime:700,  gameTime:30 },
+  easy:   { minUp: 900,  maxUp: 1500, interval: 900  },
+  medium: { minUp: 600,  maxUp: 1000, interval: 700  },
+  hard:   { minUp: 350,  maxUp: 650,  interval: 500  },
 };
-let diff = 'easy', score = 0, missed = 0, timeLeft = 30;
-let gameRunning = false, loops = [], timerID;
-const TYPES = ['🐭','🐭','🐭','🐭','💎','💣'];
+const TYPES   = ['🐭','🐭','🐭','🐭','🐭','💎','💣'];
+const TOTAL_T = 30;
+
+let diff = 'easy', score = 0, missed = 0, timeLeft = TOTAL_T;
+let gameRunning = false, timerID, moleTimers = [];
 const LS = 'cgo_hs_wam';
 const getHS = () => parseInt(localStorage.getItem(LS)||'0');
 const setHS = v => { if(v>getHS()) localStorage.setItem(LS,v); };
 
-const holes = Array.from(document.querySelectorAll('.hole'));
+// Build grid
+const grid = document.getElementById('wam-grid');
+for (let i = 0; i < 9; i++) {
+  const wrap = document.createElement('div');
+  wrap.className = 'hole-wrap';
+  wrap.dataset.i = i;
+  wrap.innerHTML = `
+    <div class="mole-container">
+      <span class="mole">🐭</span>
+    </div>
+    <div class="hole-grass"></div>
+  `;
+  wrap.addEventListener('click', () => onWhack(wrap));
+  grid.appendChild(wrap);
+}
+
+const holes = Array.from(document.querySelectorAll('.hole-wrap'));
 
 function startGame() {
-  if (gameRunning) { endGame(); return; }
-  score=0; missed=0;
-  timeLeft = DIFF[diff].gameTime;
-  gameRunning = true;
-  document.getElementById('btn-start').textContent = '⏹ Stop';
-  holes.forEach(h=>h.classList.remove('up','whacked'));
+  if (gameRunning) return;
+  document.getElementById('overlay').style.display = 'none';
+  score = 0; missed = 0; timeLeft = TOTAL_T; gameRunning = true;
   updateUI();
-  holes.forEach((_,i)=>scheduleMole(i));
-  timerID = setInterval(()=>{
+  holes.forEach(h => { h.classList.remove('up','whacked'); });
+  holes.forEach((_,i) => scheduleMole(i));
+  timerID = setInterval(() => {
     timeLeft--;
     document.getElementById('timer').textContent = timeLeft;
-    document.getElementById('timer-bar').style.width = (timeLeft/DIFF[diff].gameTime*100)+'%';
-    if(timeLeft<=0) endGame();
-  },1000);
+    document.getElementById('timer-fill').style.width = (timeLeft/TOTAL_T*100)+'%';
+    if (timeLeft <= 0) endGame();
+  }, 1000);
 }
 
 function scheduleMole(idx) {
   if (!gameRunning) return;
-  const d = DIFF[diff];
-  const delay = Math.random()*(d.maxTime-d.minTime)+d.minTime;
-  const t = setTimeout(()=>{
+  const d   = DIFF[diff];
+  const delay = Math.random() * (d.maxUp - d.minUp) + d.minUp;
+  const t = setTimeout(() => {
     if (!gameRunning) return;
-    const h    = holes[idx];
+    const h = holes[idx];
     const type = TYPES[Math.floor(Math.random()*TYPES.length)];
     h.querySelector('.mole').textContent = type;
     h.classList.remove('whacked');
     h.classList.add('up');
     h.dataset.type = type;
-    const hideT = setTimeout(()=>{
+
+    const hideT = setTimeout(() => {
       if (h.classList.contains('up') && !h.classList.contains('whacked')) {
-        missed++;
-        if(type!=='💣') score = Math.max(0,score-1);
-        updateUI();
+        if (type !== '💣') { missed++; score = Math.max(0,score-1); updateUI(); }
       }
       h.classList.remove('up','whacked');
       scheduleMole(idx);
     }, delay);
-    loops.push(hideT);
-  }, delay);
-  loops.push(t);
+    moleTimers.push(hideT);
+  }, delay * 0.7);
+  moleTimers.push(t);
 }
 
-function onWhack(e) {
-  const h = e.currentTarget;
+function onWhack(h) {
   if (!gameRunning || !h.classList.contains('up') || h.classList.contains('whacked')) return;
   h.classList.add('whacked');
   const type = h.dataset.type;
-  if (type==='💣') { score=Math.max(0,score-2); }
-  else if (type==='💎') { score+=3; }
-  else { score+=1; }
+  if      (type === '💣') score = Math.max(0,score-2);
+  else if (type === '💎') score += 3;
+  else                    score += 1;
   updateUI();
 }
 
 function endGame() {
   gameRunning = false;
   clearInterval(timerID);
-  loops.forEach(clearTimeout); loops=[];
-  holes.forEach(h=>h.classList.remove('up','whacked'));
+  moleTimers.forEach(clearTimeout); moleTimers = [];
+  holes.forEach(h => h.classList.remove('up','whacked'));
   setHS(score);
-  document.getElementById('btn-start').textContent = '▶ Start';
-  document.getElementById('hs-display').textContent = getHS();
-  alert(`Game Over! Score: ${score}\nHigh Score: ${getHS()}`);
+  updateUI();
+
+  const ov = document.getElementById('overlay');
+  ov.innerHTML = `
+    <div class="overlay-icon">🎉</div>
+    <div class="overlay-title">Time's Up!</div>
+    <div class="overlay-sub">Score: <strong style="color:var(--primary)">${score}</strong> &nbsp;·&nbsp; Best: <strong style="color:var(--green)">${getHS()}</strong></div>
+    <div class="overlay-btns">
+      <button class="btn btn-primary" onclick="location.reload()">▶ Play Again</button>
+      <a href="../index.html" class="btn btn-secondary">← Games</a>
+    </div>`;
+  ov.style.display = 'flex';
 }
 
 function updateUI() {
-  document.getElementById('score').textContent  = score;
-  document.getElementById('missed').textContent = missed;
+  document.getElementById('score').textContent   = score;
+  document.getElementById('missed').textContent  = missed;
   document.getElementById('hs-display').textContent = getHS();
 }
 
-holes.forEach(h=>h.addEventListener('click',onWhack));
-document.getElementById('btn-start').addEventListener('click',startGame);
-document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('overlay-start').addEventListener('click', startGame);
+document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('[data-diff]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); diff=b.dataset.diff;
+  b.classList.add('active'); diff = b.dataset.diff;
 }));
 
-document.getElementById('hs-display').textContent = getHS();
+updateUI();
 </script>
 </body>
 </html>
