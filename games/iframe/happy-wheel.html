@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Wheels - Play Free Online | Crazy Game Online</title>
+  <meta name="description" content="Play Happy Wheels free online on Crazy Game Online! Crazy physics racing! Get your vehicle to the finish line in one piece if you can! No download needed. Play instantly in your browser!"/>
+  <meta name="keywords" content="happy wheels, play happy wheels online, happy wheels free, browser games"/>
+  <link rel="canonical" href="https://brousee.github.io/crazy-game-online/games/iframe/happy-wheels.html"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛞</text></svg>"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a0a0f;font-family:'Inter',system-ui,sans-serif;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+    /* NAV */
+    #nav{height:50px;background:rgba(0,0,0,.8);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:20}
+    .back-a{color:rgba(255,255,255,.5);text-decoration:none;font-size:.78rem;font-weight:600;padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:50px;transition:all .2s;white-space:nowrap}
+    .back-a:hover{color:#fff;border-color:rgba(255,255,255,.25)}
+    .gtitle{font-weight:800;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .gbadge{background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.3);color:#a78bfa;font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:50px;white-space:nowrap;flex-shrink:0}
+    .ext-a{margin-left:auto;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);text-decoration:none;font-weight:700;font-size:.72rem;padding:6px 12px;border-radius:50px;border:1px solid rgba(255,255,255,.1);white-space:nowrap;flex-shrink:0;transition:all .2s}
+    .ext-a:hover{background:rgba(255,255,255,.15);color:#fff}
+
+    /* GAME WRAP */
+    #wrap{flex:1;position:relative;overflow:hidden;background:#0a0a0f}
+
+    /* IFRAME — hidden until play clicked */
+    #gf{width:100%;height:100%;border:none;display:none;position:absolute;inset:0;z-index:2}
+
+    /* SPLASH — shown by default */
+    #splash{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px;
+      background:radial-gradient(ellipse at 50% 40%, rgba(108,99,255,.15) 0%, transparent 60%), #0a0a0f}
+
+    .sp-emoji{font-size:4.5rem;filter:drop-shadow(0 8px 24px rgba(108,99,255,.5));animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+    .sp-title{font-size:clamp(1.6rem,4vw,2.5rem);font-weight:900;text-align:center;letter-spacing:-0.5px}
+    .sp-genre{background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.3);color:#a78bfa;font-size:.72rem;font-weight:700;padding:4px 14px;border-radius:50px;letter-spacing:.5px}
+    .sp-desc{color:rgba(255,255,255,.45);text-align:center;max-width:400px;line-height:1.7;font-size:.88rem}
+
+    .sp-stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .sp-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 18px;text-align:center;min-width:72px}
+    .sp-val{font-weight:900;font-size:1.1rem;color:#facc15;display:block}
+    .sp-lbl{font-size:.6rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.5px}
+
+    /* PLAY BUTTON — big and prominent */
+    .play-now-btn{
+      background:linear-gradient(135deg,#6c63ff,#4f46e5);
+      color:#fff;border:none;border-radius:50px;
+      padding:16px 48px;font-size:1.1rem;font-weight:900;
+      cursor:pointer;letter-spacing:.5px;
+      box-shadow:0 8px 24px rgba(108,99,255,.4),0 0 0 0 rgba(108,99,255,.4);
+      transition:all .2s;
+      animation:pulse-btn 2s ease-in-out infinite;
+    }
+    @keyframes pulse-btn{
+      0%,100%{box-shadow:0 8px 24px rgba(108,99,255,.4),0 0 0 0 rgba(108,99,255,.3)}
+      50%{box-shadow:0 8px 24px rgba(108,99,255,.4),0 0 0 12px rgba(108,99,255,0)}
+    }
+    .play-now-btn:hover{transform:scale(1.06);background:linear-gradient(135deg,#7c75ff,#6055f5)}
+    .play-now-btn:active{transform:scale(.98)}
+
+    .ext-link{color:rgba(255,255,255,.25);font-size:.75rem;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.15);transition:color .2s}
+    .ext-link:hover{color:rgba(255,255,255,.5)}
+
+    /* LOADING */
+    #loading{position:absolute;inset:0;background:#0a0a0f;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:4}
+    .spinner{width:44px;height:44px;border:3px solid rgba(108,99,255,.2);border-top-color:#6c63ff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .load-txt{color:rgba(255,255,255,.4);font-size:.85rem;font-weight:600}
+
+    /* FALLBACK */
+    #fallback{position:absolute;inset:0;background:#0a0a0f;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;z-index:6}
+    #fallback h2{font-size:1.6rem;font-weight:900;text-align:center}
+    #fallback p{color:rgba(255,255,255,.4);text-align:center;max-width:360px;line-height:1.7;font-size:.88rem}
+    .open-btn{background:linear-gradient(135deg,#facc15,#f59e0b);color:#000;text-decoration:none;font-weight:900;font-size:1rem;padding:14px 36px;border-radius:50px;box-shadow:0 6px 20px rgba(250,204,21,.3);transition:all .2s}
+    .open-btn:hover{transform:scale(1.05)}
+
+    /* STATUS MSG */
+    #msg{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.1);border-radius:50px;padding:8px 20px;font-size:.78rem;color:rgba(255,255,255,.6);display:none;white-space:nowrap;z-index:30;pointer-events:none}
+  </style>
+</head>
+<body>
+
+<div id="nav">
+  <a href="../../index.html" class="back-a">← All Games</a>
+  <span class="gtitle">🛞 Happy Wheels</span>
+  <span class="gbadge">Physics · Racing</span>
+  <a href="http://www.totaljerkface.com/happy_wheels.tjf" target="_blank" rel="noopener" class="ext-a">🔗 Open Full</a>
+</div>
+
+<div id="wrap">
+
+  <!-- IFRAME — only loads after click -->
+  <iframe id="gf" src="about:blank"
+    allowfullscreen
+    allow="fullscreen; autoplay; payment"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock">
+  </iframe>
+
+  <!-- SPLASH SCREEN — shown on page load -->
+  <div id="splash">
+    <div class="sp-emoji">🛞</div>
+    <div class="sp-title">Happy Wheels</div>
+    <div class="sp-genre">Physics · Racing</div>
+    <div class="sp-desc">Crazy physics racing! Get your vehicle to the finish line in one piece if you can!</div>
+    <div class="sp-stats">
+      <div class="sp-box"><span class="sp-val">Physics</span><span class="sp-lbl">Genre</span></div>
+      <div class="sp-box"><span class="sp-val">Arrow Keys</span><span class="sp-lbl">Controls</span></div>
+      <div class="sp-box"><span class="sp-val">Free</span><span class="sp-lbl">Cost</span></div>
+    </div>
+    <button class="play-now-btn" onclick="startGame()">▶ PLAY NOW</button>
+    <a href="http://www.totaljerkface.com/happy_wheels.tjf" target="_blank" rel="noopener" class="ext-link">or open on official site →</a>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="load-txt">Loading Happy Wheels...</div>
+    <div class="load-txt" style="font-size:.72rem;opacity:.5">This may take a few seconds</div>
+  </div>
+
+  <!-- FALLBACK — if iframe blocked -->
+  <div id="fallback">
+    <div style="font-size:3rem">🛞</div>
+    <h2>Happy Wheels</h2>
+    <p>This game needs to open on its official website for the best experience. Click below — it's completely free!</p>
+    <a href="http://www.totaljerkface.com/happy_wheels.tjf" target="_blank" rel="noopener" class="open-btn">▶ Play Happy Wheels Free →</a>
+    <a href="../../index.html" style="color:rgba(255,255,255,.2);font-size:.8rem;text-decoration:none;margin-top:4px">← Back to All Games</a>
+  </div>
+
+</div>
+
+<div id="msg"></div>
+
+<script>
+const SRCS = ['https://html5.gamedistribution.com/happywheels/?gd_sdk_referrer_url=https://brousee.github.io/', 'https://www.crazygames.com/embed/happy-wheels'];
+let si = 0, tried = 0, loadTimeout;
+
+function startGame() {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  loadSrc(SRCS[si]);
+}
+
+function loadSrc(url) {
+  const f = document.getElementById('gf');
+  f.style.display = 'none';
+  f.src = url;
+
+  clearTimeout(loadTimeout);
+  loadTimeout = setTimeout(() => {
+    // Check if frame has content
+    let hasContent = false;
+    try {
+      // Cross-origin will throw — that means game IS loading (not blocked)
+      const doc = f.contentDocument;
+      hasContent = doc && doc.body && doc.body.innerHTML.length > 50;
+    } catch(e) {
+      // Cross-origin = game is running in iframe ✅
+      hasContent = true;
+    }
+
+    if (hasContent) {
+      document.getElementById('loading').style.display = 'none';
+      f.style.display = 'block';
+      showMsg('🎮 ' + 'Happy Wheels' + ' loaded!');
+    } else {
+      tryNext();
+    }
+  }, 4000);
+
+  f.onload = function() {
+    clearTimeout(loadTimeout);
+    let blocked = false;
+    try {
+      const doc = f.contentDocument || f.contentWindow.document;
+      if (!doc || !doc.body || doc.body.innerHTML.length < 10) blocked = true;
+    } catch(e) {
+      // Cross-origin means game IS loading ✅
+      blocked = false;
+    }
+
+    if (!blocked) {
+      document.getElementById('loading').style.display = 'none';
+      f.style.display = 'block';
+    } else {
+      tryNext();
+    }
+  };
+}
+
+function tryNext() {
+  tried++;
+  si++;
+  if (si < SRCS.length && SRCS[si] !== SRCS[si-1]) {
+    showMsg('Trying alternate source...');
+    loadSrc(SRCS[si]);
+  } else {
+    showFallback();
+  }
+}
+
+function showFallback() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('fallback').style.display = 'flex';
+}
+
+function showMsg(m) {
+  const el = document.getElementById('msg');
+  el.textContent = m;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
