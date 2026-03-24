@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Minecraft Classic - Play Free Online | Crazy Game Online</title>
+  <meta name="description" content="Play Minecraft Classic free online! The original Minecraft free in your browser! Place and break blocks, build anything you want. No download needed, play instantly in browser."/>
+  <link rel="canonical" href="https://brousee.github.io/crazy-game-online/games/iframe/minecraft-classic.html"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛏️</text></svg>"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a0a0f;font-family:'Inter',system-ui,sans-serif;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    #nav{height:50px;background:rgba(0,0,0,.85);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+    .bk{color:rgba(255,255,255,.5);text-decoration:none;font-size:.78rem;font-weight:600;padding:6px 12px;border:1px solid rgba(255,255,255,.12);border-radius:50px;white-space:nowrap;transition:all .2s}
+    .bk:hover{color:#fff;border-color:rgba(255,255,255,.3)}
+    .gt{font-weight:800;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .gb{background:rgba(108,99,255,.18);border:1px solid rgba(108,99,255,.3);color:#a78bfa;font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:50px;white-space:nowrap;flex-shrink:0}
+    #wrap{flex:1;position:relative;overflow:hidden}
+    #gf{width:100%;height:100%;border:none;display:none;position:absolute;inset:0;z-index:2}
+    #splash{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;background:radial-gradient(ellipse at 50% 35%,rgba(108,99,255,.15),transparent 60%),#0a0a0f}
+    .sp-em{font-size:5rem;filter:drop-shadow(0 8px 24px rgba(108,99,255,.5));animation:fl 3s ease-in-out infinite}
+    @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    .sp-t{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;text-align:center;letter-spacing:-.5px}
+    .sp-g{background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.3);color:#a78bfa;font-size:.72rem;font-weight:700;padding:4px 14px;border-radius:50px}
+    .sp-d{color:rgba(255,255,255,.42);text-align:center;max-width:380px;line-height:1.7;font-size:.88rem}
+    .sp-stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .sp-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 16px;text-align:center;min-width:70px}
+    .sp-v{font-weight:900;font-size:1.05rem;color:#facc15;display:block}
+    .sp-l{font-size:.58rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.5px}
+    .pb{background:linear-gradient(135deg,#6c63ff,#4f46e5);color:#fff;border:none;border-radius:50px;padding:16px 52px;font-size:1.15rem;font-weight:900;cursor:pointer;letter-spacing:.5px;box-shadow:0 8px 28px rgba(108,99,255,.4);animation:pulse 2s ease-in-out infinite;transition:all .2s}
+    @keyframes pulse{0%,100%{box-shadow:0 8px 28px rgba(108,99,255,.4),0 0 0 0 rgba(108,99,255,.3)}50%{box-shadow:0 8px 28px rgba(108,99,255,.4),0 0 0 14px rgba(108,99,255,0)}}
+    .pb:hover{transform:scale(1.06);animation:none;box-shadow:0 12px 36px rgba(108,99,255,.5)}
+    #loading{position:absolute;inset:0;background:#0a0a0f;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:4}
+    .spin{width:46px;height:46px;border:3px solid rgba(108,99,255,.2);border-top-color:#6c63ff;border-radius:50%;animation:sp .7s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    .lt{color:rgba(255,255,255,.4);font-size:.85rem;font-weight:600}
+    #msg{position:fixed;top:58px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.1);border-radius:50px;padding:7px 18px;font-size:.76rem;color:rgba(255,255,255,.6);display:none;white-space:nowrap;z-index:30;pointer-events:none}
+  </style>
+</head>
+<body>
+
+<div id="nav">
+  <a href="../../index.html" class="bk">← All Games</a>
+  <span class="gt">⛏️ Minecraft Classic</span>
+  <span class="gb">Sandbox · Building</span>
+</div>
+
+<div id="wrap">
+  <iframe id="gf" src="about:blank" allowfullscreen allow="fullscreen;autoplay" scrolling="no"></iframe>
+
+  <div id="splash">
+    <div class="sp-em">⛏️</div>
+    <div class="sp-t">Minecraft Classic</div>
+    <div class="sp-g">Sandbox · Building</div>
+    <div class="sp-d">The original Minecraft free in your browser! Place and break blocks, build anything you want.</div>
+    <div class="sp-stats">
+      <div class="sp-box"><span class="sp-v">Sandbox</span><span class="sp-l">Genre</span></div>
+      <div class="sp-box"><span class="sp-v">WASD + Mouse</span><span class="sp-l">Controls</span></div>
+      <div class="sp-box"><span class="sp-v">Free</span><span class="sp-l">Cost</span></div>
+    </div>
+    <button class="pb" onclick="startGame()">▶ PLAY NOW</button>
+  </div>
+
+  <div id="loading">
+    <div class="spin"></div>
+    <div class="lt">Loading Minecraft Classic...</div>
+  </div>
+</div>
+
+<div id="msg"></div>
+
+<script>
+function startGame() {
+  document.getElementById('splash').style.display='none';
+  document.getElementById('loading').style.display='flex';
+  const f=document.getElementById('gf');
+  f.src='https://classic.minecraft.net/';
+  f.onload=function(){
+    document.getElementById('loading').style.display='none';
+    f.style.display='block';
+    showMsg('✅ Game loaded! Enjoy Minecraft Classic');
+  };
+  // Fallback timeout
+  setTimeout(function(){
+    document.getElementById('loading').style.display='none';
+    f.style.display='block';
+  },5000);
+}
+function showMsg(m){const el=document.getElementById('msg');el.textContent=m;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',3000);}
+</script>
+</body>
+</html>
